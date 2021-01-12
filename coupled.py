@@ -41,16 +41,17 @@ import matplotlib.pyplot as plt
 # ROUTINES                                                                    #
 # ============================================================================#
 
+# THIS NEEDS ITS OWN FILE
 class Params:
     # Dimensionless parameters
     # (kB*T = 1 and energies have units of kB*T)
     nsims = 1   # Number of simulations
     dt = 0.01      # Timestep
-    nsteps = int(1e4)  # Number of timesteps
+    nsteps = int(1e5)  # Number of timesteps
     steps = np.arange(0, nsteps)  # Simulation steps
     kB = 1     # Boltzmann constant
     T = 1      # Temperature
-    a = 0.4      # HD coupling strength, 0 <= a < 1
+    a = 0      # HD coupling strength, 0 <= a < 1
     zeta = 1   # Stokes drag coefficient
     inv_zeta = 1.0 / zeta
     k = 1      # Harmonic potential spring constant
@@ -67,8 +68,8 @@ class Params:
         draw_gaussian = False
 
     # Display
-    show_figs = False
-    show_animation = True
+    show_figs = True
+    show_animation = False
 
 def compute_switch_probability(diff):
     # Probability of a kinetic switch (i.e. state transition) between
@@ -140,9 +141,11 @@ def compute_switch_sum(state_int_array):
 
     return np.cumsum(switch_sum[:, :], axis=1)
 
-def compute_acf():
-    # Autocorrelation function
-    pass
+def compute_acf(x):
+    # Get the cross-correlation of a 1D array with itself (autocorrelation)
+    # and return the normalised result
+    result = np.correlate(x, x, mode='full')
+    return result[result.size // 2:] / np.max(result)
 
 # ============================================================================#
 # INITIALISATION                                                              #
@@ -184,6 +187,7 @@ pos = np.zeros((2, Params.nsteps))
 pos[:,0] = Params.xi[:]
 disp = np.zeros((2, Params.nsteps))
 energy = np.zeros((2, Params.nsteps))
+acf = np.zeros((2, Params.nsteps))
 
 print("  dt = {0:.2e}, num steps = {1:.1e}".format(Params.dt, Params.nsteps))
 print("  kB*T = {0:.2f}, k = {1:.2f}, a = {2:.2f}, zeta = {3:.2f}".format(
@@ -230,8 +234,10 @@ for sim in range(Params.nsims):
     disp[1, :] = pos[1, :] - Params.x0[1]
     energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
     switch_sum = compute_switch_sum(d[:, :])
-
+    acf[0, :] = compute_acf(disp[0, :])
+    acf[1, :] = compute_acf(disp[1, :])
     print("{0} / {1}".format(sim+1, Params.nsims))
+
 print("Done")
 
 print("Saving...")
@@ -248,6 +254,8 @@ print("Done")
 # PLOTTING                                                                    #
 # ============================================================================#
 print("Plotting...")
+
+# THIS NEEDS ITS OWN FILE
 
 # Energy (kBT)
 plt.plot(Params.steps, energy[0, :], label="Oscillator 1")
@@ -302,6 +310,19 @@ plt.xlabel("Steps")
 plt.ylabel("Displacement$^2$")
 plt.legend()
 plt.savefig("DispSq.png")
+if Params.show_figs:
+    plt.show()
+plt.close()
+
+# Autocorrelation of displacements
+plt.plot(Params.steps, acf[0, :], label="Oscillator 1")
+plt.plot(Params.steps, acf[1, :], label="Oscillator 2")
+plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
+plt.xlabel("Lag")
+plt.ylabel("Displacement autocorrelation")
+plt.xscale('log')
+plt.legend()
+plt.savefig("AutocorrDisp.png")
 if Params.show_figs:
     plt.show()
 plt.close()
@@ -374,6 +395,8 @@ print("Done")
 # ============================================================================#
 # ANIMATION                                                                   #
 # ============================================================================#
+
+# THIS NEEDS ITS OWN FILE
 if Params.show_animation:
     print("Animating trajectory...")
 
