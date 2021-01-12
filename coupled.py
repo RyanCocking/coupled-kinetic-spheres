@@ -44,6 +44,7 @@ import matplotlib.pyplot as plt
 class Params:
     # Dimensionless parameters
     # (kB*T = 1 and energies have units of kB*T)
+    nsims = 1   # Number of simulations
     dt = 0.01      # Timestep
     nsteps = int(1e4)  # Number of timesteps
     steps = np.arange(0, nsteps)  # Simulation steps
@@ -69,14 +70,14 @@ class Params:
     show_figs = False
     show_animation = True
 
-def switch_probability(diff):
+def compute_switch_probability(diff):
     # Probability of a kinetic switch (i.e. state transition) between
     # two potentials.
     #
     # diff = U1 - U0   (difference between state potentials)
     return np.exp(-diff / (Params.kB * Params.T))
 
-def switch_check(i, rand, prob, state):
+def attempt_switch(i, rand, prob, state):
     # Attempts to switch the kinetic state of two oscillators
     # 
     # rand, prob and state are 2-element numpy arrays.
@@ -126,6 +127,7 @@ def print_matrix(matrix, name, offset = ""):
 
 def compute_switch_sum(state_int_array):
     # Brute force and stupid way of counting the number of kinetic switches
+    # that occurred in a simulation. 
     # state_int_array is an array of integers (-1 or +1) of shape 2xN
     #
     # returns a 2xN array
@@ -137,6 +139,10 @@ def compute_switch_sum(state_int_array):
             switch_sum[1, i] = 1
 
     return np.cumsum(switch_sum[:, :], axis=1)
+
+def compute_acf():
+    # Autocorrelation function
+    pass
 
 # ============================================================================#
 # INITIALISATION                                                              #
@@ -202,27 +208,30 @@ print("Done\n")
 # ============================================================================#
 print("Main loop...")
 
-for step in Params.steps[1:]:
-    t = step * Params.dt
+for sim in range(Params.nsims):
+    
+    for step in Params.steps[1:]:
+        t = step * Params.dt
 
-    # Kinetic state
-    # Should 2kx be positive always? READ BEN CH. 4
-    p[:, step-1] = switch_probability(2 * Params.k * (pos[:, step-1] - Params.x0[:]))
-    d[:, step-1] = switch_check(step-1, rand[:, step-1], p[:, step-1], d[:, step-1])
+        # Kinetic state
+        # Should 2kx be positive always? READ BEN CH. 4
+        p[:, step-1] = compute_switch_probability(2 * Params.k * (pos[:, step-1] - Params.x0[:]))
+        d[:, step-1] = attempt_switch(step-1, rand[:, step-1], p[:, step-1], d[:, step-1])
 
-    # ODE terms (Euler scheme)
-    spring_term = -Params.k * np.matmul(inv_C, pos[:, step-1] - Params.x0[:]) * Params.dt
-    switch_term = Params.k * np.matmul(inv_C, d[:, step-1]) * Params.dt
-    brownian_term = np.matmul(inv_C_N, dW[:, step-1])
+        # ODE terms (Euler scheme)
+        spring_term = -Params.k * np.matmul(inv_C, pos[:, step-1] - Params.x0[:]) * Params.dt
+        switch_term = Params.k * np.matmul(inv_C, d[:, step-1]) * Params.dt
+        brownian_term = np.matmul(inv_C_N, dW[:, step-1])
 
-    # Position update
-    pos[:, step] = pos[:, step-1] + Params.inv_zeta * (spring_term[:] + switch_term[:] + brownian_term[:])
+        # Position update
+        pos[:, step] = pos[:, step-1] + Params.inv_zeta * (spring_term[:] + switch_term[:] + brownian_term[:])
 
+    disp[0, :] = pos[0, :] - Params.x0[0]
+    disp[1, :] = pos[1, :] - Params.x0[1]
+    energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
+    switch_sum = compute_switch_sum(d[:, :])
 
-disp[0, :] = pos[0, :] - Params.x0[0]
-disp[1, :] = pos[1, :] - Params.x0[1]
-energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
-switch_sum = compute_switch_sum(d[:, :])
+    print("{0} / {1}".format(sim+1, Params.nsims))
 print("Done")
 
 print("Saving...")
