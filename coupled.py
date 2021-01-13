@@ -41,6 +41,25 @@ import matplotlib.pyplot as plt
 # ROUTINES                                                                    #
 # ============================================================================#
 
+def print_var(item, value):
+    if type(value) == bool or type(value) == np.ndarray:
+        print("{0} : {1}".format(item, value))
+    else:
+        print("{0} : {1:.3g}".format(item, value))
+
+def print_matrix(name, matrix):
+    # Print a square matrix nicely
+    if len(matrix.shape) < 2:
+        print("Print error - Matrix too small\n")
+        return
+
+    print("{0}:".format(name))
+    for i in matrix:
+        for j in i:
+            print("{0:.3g}".format(j), end=" ")
+        print()
+    print()
+
 # THIS NEEDS ITS OWN FILE
 class Params:
     # Dimensionless parameters
@@ -51,7 +70,7 @@ class Params:
     steps = np.arange(0, nsteps)  # Simulation steps
     kB = 1     # Boltzmann constant
     T = 1      # Temperature
-    a = 0      # HD coupling strength, 0 <= a < 1
+    a = 0.9      # HD coupling strength, 0 <= a < 1
     zeta = 1   # Stokes drag coefficient
     inv_zeta = 1.0 / zeta
     k = 1      # Harmonic potential spring constant
@@ -70,6 +89,28 @@ class Params:
     # Display
     show_figs = True
     show_animation = False
+
+    def print_params():
+
+        print_var("nsims", Params.nsims)
+        print_var("dt", Params.dt)
+        print_var("nsteps", Params.nsteps)
+        print_var("kB", Params.kB)
+        print_var("T", Params.T)
+        print_var("a", Params.a)
+        print_var("zeta", Params.zeta)
+        print_var("k", Params.k)
+        print_var("x0", Params.x0[:])
+        print_var("xi", Params.xi[:])
+        print_var("run_switching", Params.run_switching)
+        print_var("run_brownian", Params.run_brownian)
+        if Params.run_brownian and Params.draw_gaussian:
+            print("Gaussian RNG")
+        else:
+            print("Uniform RNG")
+        print_var("show_figs", Params.show_figs)
+        print_var("show_animation", Params.show_animation)
+
 
 def compute_switch_probability(diff):
     # Probability of a kinetic switch (i.e. state transition) between
@@ -120,12 +161,6 @@ def check_N(C):
     coef = 2 * Params.kB * Params.T * Params.zeta
     return [np.matmul(N, N), coef*C]
 
-def print_matrix(matrix, name, offset = ""):
-    # Print a 2x2 matrix in a line.
-    line1 = matrix[0, :]
-    line2 = matrix[1, :]
-    print(offset + "{0} : {1}, {2}".format(name, line1, line2))
-
 def compute_switch_sum(state_int_array):
     # Brute force and stupid way of counting the number of kinetic switches
     # that occurred in a simulation. 
@@ -167,7 +202,7 @@ if Params.run_switching:
 else:
     d = np.zeros((2, Params.nsteps))
 
-# Brownian motion
+# Random number distributions
 if Params.run_brownian:
     if Params.draw_gaussian:
         # Gaussian random number [0,1]
@@ -182,28 +217,20 @@ if Params.run_brownian:
 else:
     dW = np.zeros((2, Params.nsteps))
 
-# Calculated quantities
+# Set up arrays for calculated quantities
 pos = np.zeros((2, Params.nsteps))
 pos[:,0] = Params.xi[:]
 disp = np.zeros((2, Params.nsteps))
 energy = np.zeros((2, Params.nsteps))
-acf = np.zeros((2, Params.nsteps))
+acf_X = np.zeros(Params.nsteps)
+acf_d = np.zeros(Params.nsteps)
 
-print("  dt = {0:.2e}, num steps = {1:.1e}".format(Params.dt, Params.nsteps))
-print("  kB*T = {0:.2f}, k = {1:.2f}, a = {2:.2f}, zeta = {3:.2f}".format(
-    Params.kB*Params.T, Params.k, Params.a, Params.zeta))
-print_matrix(C, "C", "  ")
-print_matrix(N, "N", "  ")
-print_matrix(check_N(C)[0], "N*N", "  ")
-print_matrix(check_N(C)[1], "2*kB*T*zeta*C", "  ")
-print("\n  eqbm positions    : {0}".format(Params.x0[:]))
-print("  initial positions : {0}".format(Params.xi[:]))
-print("  kinetic switching : {0}".format(Params.run_switching))
-print("  brownian motion   : {0}".format(Params.run_brownian))
-if Params.run_brownian and Params.draw_gaussian:
-    print("  Gaussian RNG")
-else:
-    print("  Uniform RNG")
+# Print stuff
+Params.print_params()
+print_matrix("C", C)
+print_matrix("N", N)
+print_matrix("N*N", check_N(C)[0])
+print_matrix("2*kB*T*zeta*C", check_N(C)[1])
 
 print("Done\n")
 
@@ -234,8 +261,8 @@ for sim in range(Params.nsims):
     disp[1, :] = pos[1, :] - Params.x0[1]
     energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
     switch_sum = compute_switch_sum(d[:, :])
-    acf[0, :] = compute_acf(disp[0, :])
-    acf[1, :] = compute_acf(disp[1, :])
+    acf_X = compute_acf(np.mean(disp[:, :], axis=0))
+    acf_d = compute_acf(np.mean(d[:, :], axis=0))
     print("{0} / {1}".format(sim+1, Params.nsims))
 
 print("Done")
@@ -257,27 +284,14 @@ print("Plotting...")
 
 # THIS NEEDS ITS OWN FILE
 
-# Energy (kBT)
-plt.plot(Params.steps, energy[0, :], label="Oscillator 1")
-plt.plot(Params.steps, energy[1, :], label="Oscillator 2")
-plt.plot(Params.steps, np.mean(energy[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(energy[:, :])")
-if Params.run_brownian:
-    plt.plot(Params.steps, 0.5*Params.kB*Params.T*np.ones(Params.nsteps), "k--", label="$0.5k<(x - x_0)^2> = 0.5k_BT$")
-plt.xlabel("Steps")
-plt.ylabel("Energy ($k_B T$)")
-plt.legend()
-plt.savefig("Energy.png")
-if Params.show_figs:
-    plt.show()
-plt.close()
-
 # Position, x
 plt.plot(Params.steps, pos[0, :], label="Oscillator 1")
 plt.plot(Params.steps, pos[1, :], label="Oscillator 2")
-plt.plot(Params.steps, np.mean(pos[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(pos[:, :])")
+mean = np.mean(pos[:, :])*np.ones(Params.nsteps)
+plt.plot(Params.steps, mean[:], 'r--', label="np.mean(pos[:, :]) = {0:.1g}".format(mean[0]))
 if Params.run_brownian:
-    plt.plot(Params.steps, Params.x0[0]*np.ones(Params.nsteps), 'k--', label="$<x_1>=x_{0,1}=$"+"{0:.2f}".format(Params.x0[0]))
-    plt.plot(Params.steps, Params.x0[1]*np.ones(Params.nsteps), 'b--', label="$<x_2>=x_{0,2}=$"+"{0:.2f}".format(Params.x0[1]))
+    plt.plot(Params.steps, Params.x0[0]*np.ones(Params.nsteps), 'k--', label="$=x_{0,1}=$"+"{0:.2g}".format(Params.x0[0]))
+    plt.plot(Params.steps, Params.x0[1]*np.ones(Params.nsteps), 'b--', label="$x_{0,2}=$"+"{0:.2g}".format(Params.x0[1]))
 plt.xlabel("Steps")
 plt.ylabel("Position")
 plt.legend()
@@ -286,10 +300,11 @@ if Params.show_figs:
     plt.show()
 plt.close()
 
-# Displacement, r = x - x0
+# Displacement, X = x - x0
 plt.plot(Params.steps, disp[0, :], label="Oscillator 1")
 plt.plot(Params.steps, disp[1, :], label="Oscillator 2")
-plt.plot(Params.steps, np.mean(disp[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(disp[:, :])")
+mean = np.mean(disp[:, :])*np.ones(Params.nsteps)
+plt.plot(Params.steps, mean[:], 'r--', label="np.mean(disp[:, :]) = {0:.1g}".format(mean[0]))
 if Params.run_brownian:
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', label="$<x-x_0>=0$")
 plt.xlabel("Steps")
@@ -300,28 +315,40 @@ if Params.show_figs:
     plt.show()
 plt.close()
 
-# Displacement squared, r^2 = (x - x0)^2
-plt.plot(Params.steps, np.square(disp[0, :]), label="Oscillator 1")
-plt.plot(Params.steps, np.square(disp[1, :]), label="Oscillator 2")
-plt.plot(Params.steps, np.mean(np.square(disp[:, :]))*np.ones(Params.nsteps), 'r--', label="np.mean(disp$^2$[:, :])")
+# Energy (kBT) = < 0.5 k X^2 >
+plt.plot(Params.steps, np.mean(energy[:, :], axis=0), label="Average over oscillators")
+mean = np.mean(energy[:, :])*np.ones(Params.nsteps)
+plt.plot(Params.steps, mean[:], 'r--', label="np.mean(energy[:]) = {0:.1g}".format(mean[0]))
 if Params.run_brownian:
-    plt.plot(Params.steps, (1.0/Params.k)*np.ones(Params.nsteps), 'k--', label="$<(x-x_0)^2>=1/k=${0:.2f}".format(1.0/Params.k))
+    plt.plot(Params.steps, 0.5*Params.kB*Params.T*np.ones(Params.nsteps), "k--", label="$0.5k_BT$ = {0:.2g}".format(0.5*Params.kB*Params.T))
 plt.xlabel("Steps")
-plt.ylabel("Displacement$^2$")
+plt.ylabel("Energy ($k_B T$)")
 plt.legend()
-plt.savefig("DispSq.png")
+plt.savefig("Energy.png")
 if Params.show_figs:
     plt.show()
 plt.close()
 
-# Autocorrelation of displacements
-plt.plot(Params.steps, acf[0, :], label="Oscillator 1")
-plt.plot(Params.steps, acf[1, :], label="Oscillator 2")
+# # Displacement squared, r^2 = (x - x0)^2
+# plt.plot(Params.steps, np.square(disp[0, :]), label="Oscillator 1")
+# plt.plot(Params.steps, np.square(disp[1, :]), label="Oscillator 2")
+# plt.plot(Params.steps, np.mean(np.square(disp[:, :]))*np.ones(Params.nsteps), 'r--', label="np.mean(disp$^2$[:, :])")
+# if Params.run_brownian:
+#     plt.plot(Params.steps, (1.0/Params.k)*np.ones(Params.nsteps), 'k--', label="$<(x-x_0)^2>=1/k=${0:.2f}".format(1.0/Params.k))
+# plt.xlabel("Steps")
+# plt.ylabel("Displacement$^2$")
+# plt.legend()
+# plt.savefig("DispSq.png")
+# if Params.show_figs:
+#     plt.show()
+# plt.close()
+
+# Displacement autocorrelation
+plt.plot(Params.steps, acf_X[:])
 plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
 plt.xlabel("Lag")
 plt.ylabel("Displacement autocorrelation")
 plt.xscale('log')
-plt.legend()
 plt.savefig("AutocorrDisp.png")
 if Params.show_figs:
     plt.show()
@@ -331,7 +358,8 @@ if Params.run_switching:
     # Probability of state switch, p = exp(-dU/kBT)
     plt.plot(Params.steps, p[0, :], label="Oscillator 1")
     plt.plot(Params.steps, p[1, :], label="Oscillator 2")
-    plt.plot(Params.steps, np.mean(p[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(p[:, :])")
+    mean = np.mean(p[:, :])*np.ones(Params.nsteps)
+    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(p[:, :]) = {0:.1g}".format(mean[0]))
     plt.xlabel("Steps")
     plt.ylabel("Probability")
     plt.legend()
@@ -343,7 +371,8 @@ if Params.run_switching:
     # Kinetic state integer, d = +-1
     plt.plot(Params.steps, d[0, :], label="Oscillator 1")
     plt.plot(Params.steps, d[1, :], label="Oscillator 2")
-    plt.plot(Params.steps, np.mean(d[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(d[:, :])")
+    mean = np.mean(d[:, :])*np.ones(Params.nsteps)
+    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(d[:, :]) = {0:.1g}".format(mean[0]))
     plt.xlabel("Steps")
     plt.ylabel("State integer")
     plt.legend()
@@ -363,32 +392,43 @@ if Params.run_switching:
         plt.show()
     plt.close()
 
-if Params.run_brownian:
-    # Wiener process vector, dW
-    plt.plot(Params.steps, dW[0, :], label="Oscillator 1")
-    plt.plot(Params.steps, dW[1, :], label="Oscillator 2")
-    plt.plot(Params.steps, np.mean(dW[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(dW[:, :])")
-    plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', label="$<dW>=0$")
-    plt.xlabel("Steps")
-    plt.ylabel("dW")
-    plt.legend()
-    plt.savefig("dW.png")
+    # State integer autocorrelation
+    plt.plot(Params.steps, acf_d[:])
+    plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
+    plt.xlabel("Lag")
+    plt.ylabel("State autocorrelation")
+    plt.xscale('log')
+    plt.savefig("AutocorrState.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-    # dW^2
-    plt.plot(Params.steps, np.square(dW[0, :]), label="Oscillator 1")
-    plt.plot(Params.steps, np.square(dW[1, :]), label="Oscillator 2")
-    plt.plot(Params.steps, np.mean(np.square(dW[:, :]))*np.ones(Params.nsteps), 'r--', label="np.mean($dW^2$[:, :])")
-    plt.plot(Params.steps, Params.dt*np.ones(Params.nsteps), 'k--', label="$<dW^2>=dt=${0:.2e}".format(Params.dt))
-    plt.xlabel("Steps")
-    plt.ylabel("$dW^2$")
-    plt.legend()
-    plt.savefig("dWSq.png")
-    if Params.show_figs:
-        plt.show()
-    plt.close()
+# if Params.run_brownian:
+#     # Wiener process vector, dW
+#     plt.plot(Params.steps, dW[0, :], label="Oscillator 1")
+#     plt.plot(Params.steps, dW[1, :], label="Oscillator 2")
+#     plt.plot(Params.steps, np.mean(dW[:, :])*np.ones(Params.nsteps), 'r--', label="np.mean(dW[:, :])")
+#     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', label="$<dW>=0$")
+#     plt.xlabel("Steps")
+#     plt.ylabel("dW")
+#     plt.legend()
+#     plt.savefig("dW.png")
+#     if Params.show_figs:
+#         plt.show()
+#     plt.close()
+
+#     # dW^2
+#     plt.plot(Params.steps, np.square(dW[0, :]), label="Oscillator 1")
+#     plt.plot(Params.steps, np.square(dW[1, :]), label="Oscillator 2")
+#     plt.plot(Params.steps, np.mean(np.square(dW[:, :]))*np.ones(Params.nsteps), 'r--', label="np.mean($dW^2$[:, :])")
+#     plt.plot(Params.steps, Params.dt*np.ones(Params.nsteps), 'k--', label="$<dW^2>=dt=${0:.2e}".format(Params.dt))
+#     plt.xlabel("Steps")
+#     plt.ylabel("$dW^2$")
+#     plt.legend()
+#     plt.savefig("dWSq.png")
+#     if Params.show_figs:
+#         plt.show()
+#     plt.close()
 
 print("Done")
 
