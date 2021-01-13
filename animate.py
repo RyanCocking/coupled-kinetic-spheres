@@ -33,7 +33,7 @@ scene.range = edge  # Set camera FOV to max amplitude
 
 ball1 = sphere(color=color.cyan, radius = 1, retain=200)
 ball2 = sphere(color=color.blue, radius = 1, retain=200)
-label_steps = label(pos=vector(150, 20, 0), pixel_pos=True, height=17)  # Step counter
+label_steps = label(pos=vector(150, 20, 0), pixel_pos=True, height=17)
 if Params.run_switching:
     label_state1 = label(pos=vector(400, 350, 0), pixel_pos = True, linecolor=ball1.color, height=17)
     label_state2 = label(pos=vector(150, 350, 0), pixel_pos = True, linecolor=ball2.color, height=17)
