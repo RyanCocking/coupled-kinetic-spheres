@@ -36,6 +36,7 @@ from vpython import *
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import Params as Params
 
 # ============================================================================#
 # ROUTINES                                                                    #
@@ -59,58 +60,6 @@ def print_matrix(name, matrix):
             print("{0:.3g}".format(j), end=" ")
         print()
     print()
-
-# THIS NEEDS ITS OWN FILE
-class Params:
-    # Dimensionless parameters
-    # (kB*T = 1 and energies have units of kB*T)
-    nsims = 1   # Number of simulations
-    dt = 0.01      # Timestep
-    nsteps = int(1e5)  # Number of timesteps
-    steps = np.arange(0, nsteps)  # Simulation steps
-    kB = 1     # Boltzmann constant
-    T = 1      # Temperature
-    a = 0.9      # HD coupling strength, 0 <= a < 1
-    zeta = 1   # Stokes drag coefficient
-    inv_zeta = 1.0 / zeta
-    k = 1      # Harmonic potential spring constant
-    x0 = np.array([5, -5])  # Equilibrium oscillator positions
-    xi = np.array([0, 0])  # Initial oscillator positions
-
-    # Simulation
-    run_switching = True
-    run_brownian = True
-
-    if run_brownian:
-        draw_gaussian = True
-    else:
-        draw_gaussian = False
-
-    # Display
-    show_figs = True
-    show_animation = False
-
-    def print_params():
-
-        print_var("nsims", Params.nsims)
-        print_var("dt", Params.dt)
-        print_var("nsteps", Params.nsteps)
-        print_var("kB", Params.kB)
-        print_var("T", Params.T)
-        print_var("a", Params.a)
-        print_var("zeta", Params.zeta)
-        print_var("k", Params.k)
-        print_var("x0", Params.x0[:])
-        print_var("xi", Params.xi[:])
-        print_var("run_switching", Params.run_switching)
-        print_var("run_brownian", Params.run_brownian)
-        if Params.run_brownian and Params.draw_gaussian:
-            print("Gaussian RNG")
-        else:
-            print("Uniform RNG")
-        print_var("show_figs", Params.show_figs)
-        print_var("show_animation", Params.show_animation)
-
 
 def compute_switch_probability(diff):
     # Probability of a kinetic switch (i.e. state transition) between
@@ -167,7 +116,7 @@ def compute_switch_sum(state_int_array):
     # state_int_array is an array of integers (-1 or +1) of shape 2xN
     #
     # returns a 2xN array
-    switch_sum = np.zeros((2, Params.nsteps), dtype=np.int)
+    switch_sum = np.zeros((Params.npart, Params.nsteps), dtype=np.int)
     for i in range(state_int_array.shape[1]):
         if d[0, i - 1] == -1 and d[0, i] == 1 or d[0, i-1] == 1 and d[0, i] == -1:
             switch_sum[0, i] = 1
@@ -195,33 +144,33 @@ inv_C_N = np.matmul(inv_C, N)
 
 # Kinetic switching
 rng = np.random.default_rng()
-rand = rng.uniform(size=((2, Params.nsteps)))
-p = np.zeros((2, Params.nsteps))
+rand = rng.uniform(size=((Params.npart, Params.nsteps)))
+p = np.zeros((Params.npart, Params.nsteps))
 if Params.run_switching:
-    d = np.ones((2, Params.nsteps))
+    d = np.ones((Params.npart, Params.nsteps))
 else:
-    d = np.zeros((2, Params.nsteps))
+    d = np.zeros((Params.npart, Params.nsteps))
 
 # Random number distributions
 if Params.run_brownian:
     if Params.draw_gaussian:
         # Gaussian random number [0,1]
-        X = np.random.normal(loc=0.0, size=(2, Params.nsteps))
+        X = np.random.normal(loc=0.0, size=(Params.npart, Params.nsteps))
         dW = np.sqrt(Params.dt) * X
     else:
         # Uniform random number [-1,1]
         # Might need normalising? Results in mean energies that are half what
         # they should be from Brownian motion
-        X  = np.random.uniform(low=-1.0, high=1.0, size=(2, Params.nsteps))
+        X  = np.random.uniform(low=-1.0, high=1.0, size=(Params.npart, Params.nsteps))
         dW = np.sqrt(3.0*Params.dt/2.0) * X
 else:
-    dW = np.zeros((2, Params.nsteps))
+    dW = np.zeros((Params.npart, Params.nsteps))
 
 # Set up arrays for calculated quantities
-pos = np.zeros((2, Params.nsteps))
-pos[:,0] = Params.xi[:]
-disp = np.zeros((2, Params.nsteps))
-energy = np.zeros((2, Params.nsteps))
+pos = np.zeros((Params.npart, Params.nsteps))
+pos[:, 0] = Params.xi[:]
+disp = np.zeros((Params.npart, Params.nsteps))
+energy = np.zeros((Params.npart, Params.nsteps))
 acf_X = np.zeros(Params.nsteps)
 acf_d = np.zeros(Params.nsteps)
 
