@@ -38,7 +38,7 @@ if Params.run_switching:
     label_state1 = label(pos=vector(400, 350, 0), pixel_pos = True, linecolor=ball1.color, height=17)
     label_state2 = label(pos=vector(150, 350, 0), pixel_pos = True, linecolor=ball2.color, height=17)
 
-axis = curve(vector(edge, 0, 0), vector(-edge, 0, 0))  # Line showing 1D axis of oscillation
+axis = curve(vector(edge, 0, 0), vector(-edge, 0, 0))
 xi1 = sphere(color=color.green, radius=0.1, pos=vector(Params.xi[0], 0, 0))
 xi2 = sphere(color=color.green, radius=0.1, pos=vector(Params.xi[1], 0, 0))
 x01 = sphere(color=color.red, radius=0.1, pos=vector(Params.x0[0], 0, 0))
