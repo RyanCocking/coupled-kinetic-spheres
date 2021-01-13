@@ -27,7 +27,6 @@ else:
 
 # Display
 show_figs = True
-show_animation = False
 
 def print_params():
     
