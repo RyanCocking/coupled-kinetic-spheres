@@ -62,6 +62,13 @@ def make_dir(folder="default"):
                 continue
 
     print("Created simulation directory '{0}'".format(folder))
+    
+def save_data(folder="default", subfolder="default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
+    # Save some numpy array data (of any shape) to a folder/subfolder path.
+    # Include file extension in file_name!
+    np.savetxt(f"{folder:s}/{subfolder:s}/{file_name:s}", data)
+    if enable_print:
+        print(f"Saved {file_name:s} to directory '{folder:s}/{subfolder:s}'")
 
 def print_var(item, value):
     if type(value) == bool or type(value) == np.ndarray:
@@ -157,6 +164,8 @@ def compute_acf(x):
 # ============================================================================#
 print("Initialising...")
 make_dir(Params.sim_dir)
+for sim in range(Params.nsims):
+    os.mkdir(f"{Params.sim_dir:s}/{sim + 1:d}")
 
 # Matrices
 C = C_matrix(Params.a)
@@ -164,35 +173,35 @@ inv_C = np.linalg.inv(C)
 N = N_matrix(Params.a)
 inv_C_N = np.matmul(inv_C, N)
 
-# Kinetic switching
+# Random numbers
 rng = np.random.default_rng()
-rand = rng.uniform(size=((Params.npart, Params.nsteps)))
-p = np.zeros((Params.npart, Params.nsteps))
-if Params.run_switching:
-    d = np.ones((Params.npart, Params.nsteps))
-else:
-    d = np.zeros((Params.npart, Params.nsteps))
-
-# Random number distributions
+rand = rng.uniform(size=(Params.nsims, Params.npart, Params.nsteps))
 if Params.run_brownian:
     if Params.draw_gaussian:
         # Gaussian random number [0,1]
-        R = np.random.normal(loc=0.0, size=(Params.npart, Params.nsteps))
+        R = np.random.normal(loc=0.0, size=rand.shape)
         dW = np.sqrt(Params.dt) * R
     else:
         # Uniform random number [-1,1]
         # Might need normalising? Results in mean energies that are half what
         # they should be from Brownian motion
-        R = np.random.uniform(low=-1.0, high=1.0, size=(Params.npart, Params.nsteps))
+        R = np.random.uniform(low=-1.0, high=1.0, size=rand.shape)
         dW = np.sqrt(3.0*Params.dt/2.0) * R
 else:
-    dW = np.zeros((Params.npart, Params.nsteps))
+    dW = np.zeros(rand.shape)
+    
+# Kinetics
+p = np.zeros((Params.npart, Params.nsteps))
+if Params.run_switching:
+    d = np.ones(p.shape)
+else:
+    d = np.zeros(p.shape)
 
 # More array initialisation
-pos = np.zeros((Params.npart, Params.nsteps))
+pos = np.zeros(p.shape)
 pos[:, 0] = Params.xi[:]
-disp = np.zeros((Params.npart, Params.nsteps))
-energy = np.zeros((Params.npart, Params.nsteps))
+disp = np.zeros(p.shape)
+energy = np.zeros(p.shape)
 acf_disp = np.zeros(Params.nsteps)
 acf_d = np.zeros(Params.nsteps)
 
@@ -220,17 +229,15 @@ for sim in range(Params.nsims):
         # Kinetic state
         # Should 2kx be positive always? READ BEN CH. 4
         p[:, step-1] = compute_switch_probability(2 * Params.k * (pos[:, step-1] - Params.x0[:]))
-        d[:, step-1] = attempt_switch(step-1, rand[:, step-1], p[:, step-1], d[:, step-1])
+        d[:, step-1] = attempt_switch(step-1, rand[sim, :, step-1], p[:, step-1], d[:, step-1])
 
         # ODE terms (Euler scheme)
         spring_term = -Params.k * np.matmul(inv_C, pos[:, step-1] - Params.x0[:]) * Params.dt
         switch_term = Params.k * np.matmul(inv_C, d[:, step-1]) * Params.dt
-        brownian_term = np.matmul(inv_C_N, dW[:, step-1])
+        brownian_term = np.matmul(inv_C_N, dW[sim, :, step-1])
 
         # Position update
         pos[:, step] = pos[:, step-1] + Params.inv_zeta * (spring_term[:] + switch_term[:] + brownian_term[:])
-
-        # print("Simulation {0} / {1} at {2:3d} %".format(sim+1, Params.nsims, int((step / Params.nsteps) * 100)), end='\r')
 
     # Record data
     disp[0, :] = pos[0, :] - Params.x0[0]
@@ -241,18 +248,17 @@ for sim in range(Params.nsims):
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
 
+    save_data(Params.sim_dir, str(sim + 1), "position.txt", pos)
+    save_data(Params.sim_dir, str(sim + 1), "position.txt", pos)
+    save_data(Params.sim_dir, str(sim + 1), "displacement.txt", disp)
+    save_data(Params.sim_dir, str(sim + 1), "energy.txt", energy)
+    save_data(Params.sim_dir, str(sim + 1), "autocorrdisp.txt", acf_disp)
+    if Params.run_brownian:
+        save_data(Params.sim_dir, str(sim + 1), "dW.txt", dW[sim, :, :])
+    if Params.run_switching:
+        save_data(Params.sim_dir, str(sim + 1), "prob.txt", p)
+        save_data(Params.sim_dir, str(sim + 1), "stateint.txt", d)
+        save_data(Params.sim_dir, str(sim + 1), "switchcumsum.txt", switch_sum)
+        save_data(Params.sim_dir, str(sim + 1), "autocorrstate.txt", acf_d)
+        
 print("\nDone")
-
-print("Saving data...")
-np.savetxt(f"{Params.sim_dir:s}/position.txt", pos)
-np.savetxt(f"{Params.sim_dir:s}/displacement.txt", disp)
-np.savetxt(f"{Params.sim_dir:s}/energy.txt", energy)
-np.savetxt(f"{Params.sim_dir:s}/autocorrdisp.txt", acf_disp)
-if Params.run_brownian:
-    np.savetxt(f"{Params.sim_dir:s}/dW.txt", dW)
-if Params.run_switching:
-    np.savetxt(f"{Params.sim_dir:s}/prob.txt", p)
-    np.savetxt(f"{Params.sim_dir:s}/stateint.txt", d)
-    np.savetxt(f"{Params.sim_dir:s}/switchcumsum.txt", switch_sum)
-    np.savetxt(f"{Params.sim_dir:s}/autocorrstate.txt", acf_d)
-print("Done")
