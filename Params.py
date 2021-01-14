@@ -15,18 +15,21 @@ inv_zeta = 1.0 / zeta
 k = 1      # Harmonic potential spring constant
 x0 = np.array([5, -5])  # Equilibrium oscillator positions
 xi = np.array([0, 0])  # Initial oscillator positions
+sim_dir = f"{a:.3g}"
 
-# Simulation
+# Bools
 run_switching = False
 run_brownian = True
-
 if run_brownian:
     draw_gaussian = True
 else:
     draw_gaussian = False
+show_figs = False
 
-# Display
-show_figs = True
+if a < 0 or a >= 1:
+    print(f"WARNING: Coupling parameter 'a' is set to {a:.3g}. Choose a value within 0 <= a < 1 to avoid instability.")
+    print("Exiting")
+    quit()
 
 def print_params():
     
@@ -49,4 +52,3 @@ def print_params():
     else:
         print("  Uniform RNG")
     print("  {0} : {1}".format("show_figs", show_figs))
-    print("  {0} : {1}".format("show_animation", show_animation))
