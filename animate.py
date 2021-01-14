@@ -7,15 +7,16 @@ from vpython import *
 # ============================================================================#
 
 print("Loading data...")
-pos = np.loadtxt("position.txt")
+pos = np.loadtxt(f"{Params.sim_dir:s}/1/position.txt")
 if Params.run_switching:
-    d = np.loadtxt("stateint.txt")
-    switch_sum = np.loadtxt("switchcumsum.txt")
+    d = np.loadtxt(f"{Params.sim_dir:s}/1/stateint.txt")
+    switch_sum = np.loadtxt(f"{Params.sim_dir:s}/1/switchcumsum.txt")
 print("Done")
 
 print("Animating trajectory...")
 scene.caption = """
-1D toy model of coupled harmonic oscillators with kinetic switching.
+1D toy model of coupled harmonic oscillators with kinetic switching. Trajectory
+taken from the first simulation of the parameter set.
 
 Blue and cyan spheres are the oscillators.
 Green dots are initial positions.

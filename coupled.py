@@ -41,7 +41,7 @@ import Params as Params
 # ROUTINES                                                                    #
 # ============================================================================#
 
-def make_dir(folder="default"):
+def make_dir(folder="default", print_success=False):
     # Attempt to create a directory and warn the user of overwriting
     
     try:
@@ -55,20 +55,20 @@ def make_dir(folder="default"):
                 os.mkdir(folder)
                 break
             elif prompt == "n" or prompt == "N":
-                print("Exited")
+                print("Exiting")
                 quit()
             else:
                 print("Invalid entry")
                 continue
-
-    print("Created simulation directory '{0}'".format(folder))
+    if print_success:
+        print("Created simulation directory '{0}'".format(folder))
     
-def save_data(folder="default", subfolder="default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
-    # Save some numpy array data (of any shape) to a folder/subfolder path.
+def save_data(path="default/default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
+    # Save some numpy array data (of any shape) to a given path.
     # Include file extension in file_name!
-    np.savetxt(f"{folder:s}/{subfolder:s}/{file_name:s}", data)
+    np.savetxt(f"{path:s}/{file_name:s}", data)
     if enable_print:
-        print(f"Saved {file_name:s} to directory '{folder:s}/{subfolder:s}'")
+        print(f"Saved {file_name:s} to directory '{path:s}'")
 
 def print_var(item, value):
     if type(value) == bool or type(value) == np.ndarray:
@@ -163,9 +163,7 @@ def compute_acf(x):
 # INITIALISATION                                                              #
 # ============================================================================#
 print("Initialising...")
-make_dir(Params.sim_dir)
-for sim in range(Params.nsims):
-    os.mkdir(f"{Params.sim_dir:s}/{sim + 1:d}")
+make_dir(Params.sim_dir, print_success=True)
 
 # Matrices
 C = C_matrix(Params.a)
@@ -222,6 +220,9 @@ print("Running...")
 for sim in range(Params.nsims):
     
     print("Simulation {0} / {1}".format(sim+1, Params.nsims), end='\r')
+    
+    sub_dir = f"{Params.sim_dir:s}/{sim + 1:d}"
+    make_dir(sub_dir)
 
     for step in Params.steps[1:]:
         t = step * Params.dt
@@ -248,17 +249,17 @@ for sim in range(Params.nsims):
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
 
-    save_data(Params.sim_dir, str(sim + 1), "position.txt", pos)
-    save_data(Params.sim_dir, str(sim + 1), "position.txt", pos)
-    save_data(Params.sim_dir, str(sim + 1), "displacement.txt", disp)
-    save_data(Params.sim_dir, str(sim + 1), "energy.txt", energy)
-    save_data(Params.sim_dir, str(sim + 1), "autocorrdisp.txt", acf_disp)
+    save_data(sub_dir, "position.txt", pos)
+    save_data(sub_dir, "position.txt", pos)
+    save_data(sub_dir, "displacement.txt", disp)
+    save_data(sub_dir, "energy.txt", energy)
+    save_data(sub_dir, "autocorrdisp.txt", acf_disp)
     if Params.run_brownian:
-        save_data(Params.sim_dir, str(sim + 1), "dW.txt", dW[sim, :, :])
+        save_data(sub_dir, "dW.txt", dW[sim, :, :])
     if Params.run_switching:
-        save_data(Params.sim_dir, str(sim + 1), "prob.txt", p)
-        save_data(Params.sim_dir, str(sim + 1), "stateint.txt", d)
-        save_data(Params.sim_dir, str(sim + 1), "switchcumsum.txt", switch_sum)
-        save_data(Params.sim_dir, str(sim + 1), "autocorrstate.txt", acf_d)
+        save_data(sub_dir, "prob.txt", p)
+        save_data(sub_dir, "stateint.txt", d)
+        save_data(sub_dir, "switchcumsum.txt", switch_sum)
+        save_data(sub_dir, "autocorrstate.txt", acf_d)
         
 print("\nDone")
