@@ -2,20 +2,28 @@ import Params as Params
 import numpy as np
 import matplotlib.pyplot as plt
 
+def save_to_dir(folder = ".", fig_name = "Figure.png"):
+    # Save a figure to a folder and print confirmation to stdout.
+    # Include the file extension in fig_name!
+    plt.savefig(f"{folder:s}/{fig_name:s}")
+    print(f"Saved {fig_name:s} to directory '{folder:s}'")
+
 # ============================================================================#
 # PLOTTING                                                                    #
 # ============================================================================#
 
 print("Loading data...")
-pos = np.loadtxt("position.txt")
-disp = np.loadtxt("displacement.txt")
-energy = np.loadtxt("energy.txt")
-dW = np.loadtxt("dW.txt")
-p = np.loadtxt("prob.txt")
-d = np.loadtxt("stateint.txt")
-switch_sum = np.loadtxt("switchcumsum.txt")
-acf_disp = np.loadtxt("autocorrdisp.txt")
-acf_d = np.loadtxt("autocorrstate.txt")
+pos = np.loadtxt(f"{Params.sim_dir:s}/position.txt")
+disp = np.loadtxt(f"{Params.sim_dir:s}/displacement.txt")
+energy = np.loadtxt(f"{Params.sim_dir:s}/energy.txt")
+acf_disp = np.loadtxt(f"{Params.sim_dir:s}/autocorrdisp.txt")
+if Params.run_brownian:
+    dW = np.loadtxt(f"{Params.sim_dir:s}/dW.txt")
+if Params.run_switching:
+    p = np.loadtxt(f"{Params.sim_dir:s}/prob.txt")
+    d = np.loadtxt(f"{Params.sim_dir:s}/stateint.txt")
+    switch_sum = np.loadtxt(f"{Params.sim_dir:s}/switchcumsum.txt")
+    acf_d = np.loadtxt(f"{Params.sim_dir:s}/autocorrstate.txt")
 print("Done")
 
 print("Plotting...")
@@ -31,7 +39,7 @@ if Params.run_brownian:
 plt.xlabel("Steps")
 plt.ylabel("Position")
 plt.legend()
-plt.savefig("Pos.png")
+save_to_dir(f"{Params.sim_dir:s}", "Pos.png")
 if Params.show_figs:
     plt.show()
 plt.close()
@@ -46,7 +54,7 @@ if Params.run_brownian:
 plt.xlabel("Steps")
 plt.ylabel("Displacement")
 plt.legend()
-plt.savefig("Disp.png")
+save_to_dir(f"{Params.sim_dir:s}", "Disp.png")
 if Params.show_figs:
     plt.show()
 plt.close()
@@ -60,7 +68,7 @@ if Params.run_brownian:
 plt.xlabel("Steps")
 plt.ylabel("Energy ($k_B T$)")
 plt.legend()
-plt.savefig("Energy.png")
+save_to_dir(f"{Params.sim_dir:s}", "Energy.png")
 if Params.show_figs:
     plt.show()
 plt.close()
@@ -74,7 +82,7 @@ plt.close()
 # plt.xlabel("Steps")
 # plt.ylabel("Displacement$^2$")
 # plt.legend()
-# plt.savefig("DispSq.png")
+# save_to_dir(f"{Params.sim_dir:s}", "DispSq.png")
 # if Params.show_figs:
 #     plt.show()
 # plt.close()
@@ -85,7 +93,7 @@ plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
 plt.xlabel("Lag")
 plt.ylabel("Displacement autocorrelation")
 plt.xscale('log')
-plt.savefig("AutocorrDisp.png")
+save_to_dir(f"{Params.sim_dir:s}", "AutocorrDisp.png")
 if Params.show_figs:
     plt.show()
 plt.close()
@@ -99,7 +107,7 @@ if Params.run_switching:
     plt.xlabel("Steps")
     plt.ylabel("Probability")
     plt.legend()
-    plt.savefig("Prob.png")
+    save_to_dir(f"{Params.sim_dir:s}", "Prob.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -112,7 +120,7 @@ if Params.run_switching:
     plt.xlabel("Steps")
     plt.ylabel("State integer")
     plt.legend()
-    plt.savefig("StateInt.png")
+    save_to_dir(f"{Params.sim_dir:s}", "StateInt.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -123,7 +131,7 @@ if Params.run_switching:
     plt.xlabel("Steps")
     plt.ylabel("Cumulative sum of state changes")
     plt.legend()
-    plt.savefig("SwitchCumSum.png")
+    save_to_dir(f"{Params.sim_dir:s}", "SwitchCumSum.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -134,7 +142,7 @@ if Params.run_switching:
     plt.xlabel("Lag")
     plt.ylabel("State autocorrelation")
     plt.xscale('log')
-    plt.savefig("AutocorrState.png")
+    save_to_dir(f"{Params.sim_dir:s}", "AutocorrState.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -148,7 +156,7 @@ if Params.run_switching:
 #     plt.xlabel("Steps")
 #     plt.ylabel("dW")
 #     plt.legend()
-#     plt.savefig("dW.png")
+#     save_to_dir(f"{Params.sim_dir:s}", "dW.png")
 #     if Params.show_figs:
 #         plt.show()
 #     plt.close()
@@ -161,7 +169,7 @@ if Params.run_switching:
 #     plt.xlabel("Steps")
 #     plt.ylabel("$dW^2$")
 #     plt.legend()
-#     plt.savefig("dWSq.png")
+#     save_to_dir(f"{Params.sim_dir:s}", "dWSq.png")
 #     if Params.show_figs:
 #         plt.show()
 #     plt.close()

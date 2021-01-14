@@ -8,8 +8,9 @@ from vpython import *
 
 print("Loading data...")
 pos = np.loadtxt("position.txt")
-d = np.loadtxt("stateint.txt")
-switch_sum = np.loadtxt("switchcumsum.txt")
+if Params.run_switching:
+    d = np.loadtxt("stateint.txt")
+    switch_sum = np.loadtxt("switchcumsum.txt")
 print("Done")
 
 print("Animating trajectory...")
