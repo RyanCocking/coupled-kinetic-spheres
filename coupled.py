@@ -33,11 +33,35 @@ system equilibrates to the correct energy for a harmonic potential, ie <x>=x_e a
 """
 
 import numpy as np
+import os
+import shutil
 import Params as Params
 
 # ============================================================================#
 # ROUTINES                                                                    #
 # ============================================================================#
+
+def make_dir(folder="default"):
+    # Attempt to create a directory and warn the user of overwriting
+    
+    try:
+        os.mkdir(folder)
+    except FileExistsError:
+        print("The simulation will overwrite the directory '{0}'. Proceed? (y/n)".format(folder))
+        while True:
+            prompt = input()
+            if prompt == "y" or prompt == "Y":
+                shutil.rmtree(folder)
+                os.mkdir(folder)
+                break
+            elif prompt == "n" or prompt == "N":
+                print("Exited")
+                quit()
+            else:
+                print("Invalid entry")
+                continue
+
+    print("Created simulation directory '{0}'".format(folder))
 
 def print_var(item, value):
     if type(value) == bool or type(value) == np.ndarray:
@@ -132,6 +156,7 @@ def compute_acf(x):
 # INITIALISATION                                                              #
 # ============================================================================#
 print("Initialising...")
+make_dir(Params.sim_dir)
 
 # Matrices
 C = C_matrix(Params.a)
@@ -213,18 +238,21 @@ for sim in range(Params.nsims):
     energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
     switch_sum = compute_switch_sum(d[:, :])
     acf_disp = compute_acf(np.mean(disp[:, :], axis=0))
-    acf_d = compute_acf(np.mean(d[:, :], axis=0))
+    if Params.run_switching:
+        acf_d = compute_acf(np.mean(d[:, :], axis=0))
 
 print("\nDone")
 
 print("Saving data...")
-np.savetxt("position.txt", pos)
-np.savetxt("displacement.txt", disp)
-np.savetxt("energy.txt", energy)
-np.savetxt("dW.txt", dW)
-np.savetxt("prob.txt", p)
-np.savetxt("stateint.txt", d)
-np.savetxt("switchcumsum.txt", switch_sum)
-np.savetxt("autocorrdisp.txt", acf_disp)
-np.savetxt("autocorrstate.txt", acf_d)
+np.savetxt(f"{Params.sim_dir:s}/position.txt", pos)
+np.savetxt(f"{Params.sim_dir:s}/displacement.txt", disp)
+np.savetxt(f"{Params.sim_dir:s}/energy.txt", energy)
+np.savetxt(f"{Params.sim_dir:s}/autocorrdisp.txt", acf_disp)
+if Params.run_brownian:
+    np.savetxt(f"{Params.sim_dir:s}/dW.txt", dW)
+if Params.run_switching:
+    np.savetxt(f"{Params.sim_dir:s}/prob.txt", p)
+    np.savetxt(f"{Params.sim_dir:s}/stateint.txt", d)
+    np.savetxt(f"{Params.sim_dir:s}/switchcumsum.txt", switch_sum)
+    np.savetxt(f"{Params.sim_dir:s}/autocorrstate.txt", acf_d)
 print("Done")
