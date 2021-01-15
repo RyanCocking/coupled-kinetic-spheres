@@ -24,10 +24,14 @@ if run_brownian:
     draw_gaussian = True
 else:
     draw_gaussian = False
-show_figs = False
+show_figs = False  # Display figures as they are plotted
 
 if a < 0 or a >= 1:
     print(f"WARNING: Coupling parameter 'a' is set to {a:.3g}. Choose a value within 0 <= a < 1 to avoid instability.")
+    print("Exiting")
+    quit()
+if draw_gaussian == False:
+    print(f"WARNING: Uniform RNG is currently broken. Make sure 'draw_gaussian' is set to True.")
     print("Exiting")
     quit()
 
