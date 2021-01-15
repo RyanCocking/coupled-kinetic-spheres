@@ -3,7 +3,7 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nsims = 3   # Number of simulations
+nsims = 3   # Number of repeats per simulation
 dt = 0.01      # Timestep
 nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
@@ -15,7 +15,7 @@ inv_zeta = 1.0 / zeta
 k = 1      # Harmonic potential spring constant
 x0 = np.array([5, -5])  # Equilibrium oscillator positions
 xi = np.array([0, 0])  # Initial oscillator positions
-sim_dir = f"{a:.3g}"
+sim_dir = f"{a:.3g}"  # Master directory for all data
 
 # Bools
 run_switching = False

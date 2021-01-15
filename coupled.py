@@ -34,6 +34,7 @@ system equilibrates to the correct energy for a harmonic potential, ie <x>=x_e a
 
 import numpy as np
 import os
+import sys
 import shutil
 import params as Params
 import plot as Plot
@@ -42,7 +43,7 @@ import plot as Plot
 # ROUTINES                                                                    #
 # ============================================================================#
 
-def make_dir(folder="default", print_success=False):
+def make_dir(folder="default", skip=False, print_success=False):
     # Attempt to create a directory and warn the user of overwriting
     
     try:
@@ -51,7 +52,7 @@ def make_dir(folder="default", print_success=False):
         print("The simulation will overwrite the directory '{0}'. Proceed? (y/n)".format(folder))
         while True:
             prompt = input()
-            if prompt == "y" or prompt == "Y":
+            if prompt == "y" or prompt == "Y" or skip:
                 shutil.rmtree(folder)
                 os.mkdir(folder)
                 break
@@ -82,7 +83,7 @@ def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10)
         print(f"Saved {file_name:s} to directory '{path:s}'")
         
 def compute_mean_array(path="default", file_name="sample.txt", num_sims=1, enable_print=False):
-    # Return the mean average taken over repeated simulations.
+    # Return the mean average taken over repeats.
     arrays = []
     for sim in range(num_sims):
         array = load_array(f"{path:s}/{sim + 1:d}", file_name, enable_print)
@@ -182,8 +183,25 @@ def compute_acf(x):
 # ============================================================================#
 # INITIALISATION                                                              #
 # ============================================================================#
+
+# Check for arguments passed to script
+if sys.argv[:] > 1:
+    run_param_search = sys.argv[1]
+    if run_param_search:
+        print("Running as part of parameter search")
+    elif not run_param_search:
+        print("Running as individual simulation")
+    else:
+        print("ERROR - Invalid argument to script")
+        print("Exiting")
+        quit()
+else:
+    print("No arguments to script found")
+    print("Running as individual simulation")
+    run_param_search = False
+
 print("Initialising...")
-make_dir(Params.sim_dir, print_success=True)
+make_dir(Params.sim_dir, run_param_search)
 
 # Matrices
 C = C_matrix(Params.a)
@@ -285,7 +303,7 @@ print("\nDone")
 
 Plot.plot_all()
 
-# Calculating and plotting average quantities over simulation repeats
+# Calculating and plotting average quantities over repeats
 print("Plotting figures of averaged repeat data...")
 mean_pos = compute_mean_array(path=Params.sim_dir, file_name="position.txt", num_sims=Params.nsims, enable_print=True)
 mean_disp = compute_mean_array(path=Params.sim_dir, file_name="displacement.txt", num_sims=Params.nsims, enable_print=True)
