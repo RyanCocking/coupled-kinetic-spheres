@@ -63,6 +63,16 @@ def make_dir(folder="default", print_success=False):
     if print_success:
         print("Created simulation directory '{0}'".format(folder))
     
+# NOTE: Duplicate function
+def load_array(path="default/default", file_name="sample.txt", enable_print=False):
+    # Load some numpy array data from a given path. Shape of loaded array will depend
+    # on what was saved.
+    # Include file extension in file_name!
+    data = np.loadtxt(f"{path:s}/{file_name:s}")
+    if enable_print:
+        print(f"Loaded {file_name:s} from directory '{path:s}'")
+    return data
+
 def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
     # Save some numpy array data (of any shape) to a given path.
     # Include file extension in file_name!
@@ -70,9 +80,14 @@ def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10)
     if enable_print:
         print(f"Saved {file_name:s} to directory '{path:s}'")
         
-def compute_mean_array(path="default", num_sims=1, enable_print=False):
-    # Return the mean array using data from repeated simulations
-    pass
+def compute_mean_array(path="default", file_name="sample.txt", num_sims=1, enable_print=False):
+    # Return the mean average taken over repeated simulations.
+    arrays = []
+    for sim in range(num_sims):
+        array = load_array(f"{path:s}/{sim + 1:d}", file_name, enable_print)
+        arrays.append(array)
+        
+    return np.mean(np.array(arrays), axis=0)
 
 def print_var(item, value):
     if type(value) == bool or type(value) == np.ndarray:
@@ -223,7 +238,7 @@ print("Running...")
 
 for sim in range(Params.nsims):
     
-    print("Simulation {0} / {1}".format(sim+1, Params.nsims), end='\r')
+    print("Simulation {0} / {1}".format(sim + 1, Params.nsims), end='\r')
     
     sub_dir = f"{Params.sim_dir:s}/{sim + 1:d}"
     make_dir(sub_dir)
@@ -267,4 +282,3 @@ for sim in range(Params.nsims):
         save_array(sub_dir, "autocorrstate.txt", acf_d)
         
 print("\nDone")
-
