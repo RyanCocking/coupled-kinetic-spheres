@@ -36,6 +36,7 @@ import numpy as np
 import os
 import shutil
 import Params as Params
+import plot as plot
 
 # ============================================================================#
 # ROUTINES                                                                    #
@@ -282,3 +283,5 @@ for sim in range(Params.nsims):
         save_array(sub_dir, "autocorrstate.txt", acf_d)
         
 print("\nDone")
+
+plot.plot_all()
