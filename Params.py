@@ -3,9 +3,9 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nsims = 2   # Number of simulations
+nsims = 3   # Number of simulations
 dt = 0.01      # Timestep
-nsteps = int(1e3)  # Number of timesteps
+nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
 kB = 1     # Boltzmann constant
 T = 1      # Temperature
@@ -32,7 +32,6 @@ if a < 0 or a >= 1:
     quit()
 
 def print_params():
-    
     print("Simulation parameters:")
     print("  {0} : {1:.3g}".format("npart", npart))
     print("  {0} : {1:.3g}".format("nsims", nsims))

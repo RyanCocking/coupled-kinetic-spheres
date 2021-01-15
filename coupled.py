@@ -63,12 +63,16 @@ def make_dir(folder="default", print_success=False):
     if print_success:
         print("Created simulation directory '{0}'".format(folder))
     
-def save_data(path="default/default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
+def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
     # Save some numpy array data (of any shape) to a given path.
     # Include file extension in file_name!
     np.savetxt(f"{path:s}/{file_name:s}", data)
     if enable_print:
         print(f"Saved {file_name:s} to directory '{path:s}'")
+        
+def compute_mean_array(path="default", num_sims=1, enable_print=False):
+    # Return the mean array using data from repeated simulations
+    pass
 
 def print_var(item, value):
     if type(value) == bool or type(value) == np.ndarray:
@@ -249,17 +253,18 @@ for sim in range(Params.nsims):
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
 
-    save_data(sub_dir, "position.txt", pos)
-    save_data(sub_dir, "position.txt", pos)
-    save_data(sub_dir, "displacement.txt", disp)
-    save_data(sub_dir, "energy.txt", energy)
-    save_data(sub_dir, "autocorrdisp.txt", acf_disp)
+    save_array(sub_dir, "position.txt", pos)
+    save_array(sub_dir, "position.txt", pos)
+    save_array(sub_dir, "displacement.txt", disp)
+    save_array(sub_dir, "energy.txt", energy)
+    save_array(sub_dir, "autocorrdisp.txt", acf_disp)
     if Params.run_brownian:
-        save_data(sub_dir, "dW.txt", dW[sim, :, :])
+        save_array(sub_dir, "dW.txt", dW[sim, :, :])
     if Params.run_switching:
-        save_data(sub_dir, "prob.txt", p)
-        save_data(sub_dir, "stateint.txt", d)
-        save_data(sub_dir, "switchcumsum.txt", switch_sum)
-        save_data(sub_dir, "autocorrstate.txt", acf_d)
+        save_array(sub_dir, "prob.txt", p)
+        save_array(sub_dir, "stateint.txt", d)
+        save_array(sub_dir, "switchcumsum.txt", switch_sum)
+        save_array(sub_dir, "autocorrstate.txt", acf_d)
         
 print("\nDone")
+

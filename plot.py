@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 # PLOTTING                                                                    #
 # ============================================================================#
 
-def save_to_dir(folder = ".", fig_name = "Figure.png", enable_print=False):
+def save_figure(folder = ".", fig_name = "Figure.png", enable_print=False):
     # Save a figure to a folder and print confirmation to stdout.
     # Include the file extension in fig_name!
     plt.savefig(f"{folder:s}/{fig_name:s}")
     if enable_print:
         print(f"Saved {fig_name:s} to directory '{folder:s}'")
 
-def load_data(path="default/default", file_name="sample.txt", enable_print=False):
+def load_array(path="default/default", file_name="sample.txt", enable_print=False):
     # Load some numpy array data from a given path. Shape of loaded array will depend
     # on what was saved.
     # Include file extension in file_name!
@@ -33,17 +33,17 @@ for sim in range(Params.nsims):
         print(f"ERROR - Simulation directory '{sub_dir:s}' does not exist")
         print("Exiting")
         quit()
-    pos = load_data(sub_dir, "position.txt")
-    disp = load_data(sub_dir, "displacement.txt")
-    energy = load_data(sub_dir, "energy.txt")
-    acf_disp = load_data(sub_dir, "autocorrdisp.txt")
+    pos = load_array(sub_dir, "position.txt")
+    disp = load_array(sub_dir, "displacement.txt")
+    energy = load_array(sub_dir, "energy.txt")
+    acf_disp = load_array(sub_dir, "autocorrdisp.txt")
     if Params.run_brownian:
-        dW = load_data(sub_dir, "dW.txt")
+        dW = load_array(sub_dir, "dW.txt")
     if Params.run_switching:
-        p = load_data(sub_dir, "prob.txt")
-        d = load_data(sub_dir, "stateint.txt")
-        switch_sum = load_data(sub_dir, "switchcumsum.txt")
-        acf_d = load_data(sub_dir, "autocorrstate.txt")
+        p = load_array(sub_dir, "prob.txt")
+        d = load_array(sub_dir, "stateint.txt")
+        switch_sum = load_array(sub_dir, "switchcumsum.txt")
+        acf_d = load_array(sub_dir, "autocorrstate.txt")
 
     # Position, x
     plt.plot(Params.steps, pos[0, :], label="Oscillator 1")
@@ -56,7 +56,7 @@ for sim in range(Params.nsims):
     plt.xlabel("Steps")
     plt.ylabel("Position")
     plt.legend()
-    save_to_dir(sub_dir, "Pos.png")
+    save_figure(sub_dir, "Pos.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -71,7 +71,7 @@ for sim in range(Params.nsims):
     plt.xlabel("Steps")
     plt.ylabel("Displacement")
     plt.legend()
-    save_to_dir(sub_dir, "Disp.png")
+    save_figure(sub_dir, "Disp.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -85,7 +85,7 @@ for sim in range(Params.nsims):
     plt.xlabel("Steps")
     plt.ylabel("Energy ($k_B T$)")
     plt.legend()
-    save_to_dir(sub_dir, "Energy.png")
+    save_figure(sub_dir, "Energy.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -99,7 +99,7 @@ for sim in range(Params.nsims):
     # plt.xlabel("Steps")
     # plt.ylabel("Displacement$^2$")
     # plt.legend()
-    # save_to_dir(sub_dir, "DispSq.png")
+    # save_figure(sub_dir, "DispSq.png")
     # if Params.show_figs:
     #     plt.show()
     # plt.close()
@@ -110,7 +110,7 @@ for sim in range(Params.nsims):
     plt.xlabel("Lag")
     plt.ylabel("Displacement autocorrelation")
     plt.xscale('log')
-    save_to_dir(sub_dir, "AutocorrDisp.png")
+    save_figure(sub_dir, "AutocorrDisp.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -124,7 +124,7 @@ for sim in range(Params.nsims):
         plt.xlabel("Steps")
         plt.ylabel("Probability")
         plt.legend()
-        save_to_dir(sub_dir, "Prob.png")
+        save_figure(sub_dir, "Prob.png")
         if Params.show_figs:
             plt.show()
         plt.close()
@@ -137,7 +137,7 @@ for sim in range(Params.nsims):
         plt.xlabel("Steps")
         plt.ylabel("State integer")
         plt.legend()
-        save_to_dir(sub_dir, "StateInt.png")
+        save_figure(sub_dir, "StateInt.png")
         if Params.show_figs:
             plt.show()
         plt.close()
@@ -148,7 +148,7 @@ for sim in range(Params.nsims):
         plt.xlabel("Steps")
         plt.ylabel("Cumulative sum of state changes")
         plt.legend()
-        save_to_dir(sub_dir, "SwitchCumSum.png")
+        save_figure(sub_dir, "SwitchCumSum.png")
         if Params.show_figs:
             plt.show()
         plt.close()
@@ -159,7 +159,7 @@ for sim in range(Params.nsims):
         plt.xlabel("Lag")
         plt.ylabel("State autocorrelation")
         plt.xscale('log')
-        save_to_dir(sub_dir, "AutocorrState.png")
+        save_figure(sub_dir, "AutocorrState.png")
         if Params.show_figs:
             plt.show()
         plt.close()
@@ -173,7 +173,7 @@ for sim in range(Params.nsims):
     #     plt.xlabel("Steps")
     #     plt.ylabel("dW")
     #     plt.legend()
-    #     save_to_dir(sub_dir, "dW.png")
+    #     save_figure(sub_dir, "dW.png")
     #     if Params.show_figs:
     #         plt.show()
     #     plt.close()
@@ -186,7 +186,7 @@ for sim in range(Params.nsims):
     #     plt.xlabel("Steps")
     #     plt.ylabel("$dW^2$")
     #     plt.legend()
-    #     save_to_dir(sub_dir, "dWSq.png")
+    #     save_figure(sub_dir, "dWSq.png")
     #     if Params.show_figs:
     #         plt.show()
     #     plt.close()
