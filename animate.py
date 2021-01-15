@@ -1,4 +1,4 @@
-import Params as Params
+import params as Params
 import numpy as np
 from vpython import *
 

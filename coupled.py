@@ -35,8 +35,8 @@ system equilibrates to the correct energy for a harmonic potential, ie <x>=x_e a
 import numpy as np
 import os
 import shutil
-import Params as Params
-import plot as plot
+import params as Params
+import plot as Plot
 
 # ============================================================================#
 # ROUTINES                                                                    #
@@ -270,7 +270,6 @@ for sim in range(Params.nsims):
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
 
     save_array(sub_dir, "position.txt", pos)
-    save_array(sub_dir, "position.txt", pos)
     save_array(sub_dir, "displacement.txt", disp)
     save_array(sub_dir, "energy.txt", energy)
     save_array(sub_dir, "autocorrdisp.txt", acf_disp)
@@ -284,4 +283,17 @@ for sim in range(Params.nsims):
         
 print("\nDone")
 
-plot.plot_all()
+Plot.plot_all()
+
+# Calculating and plotting average quantities over simulation repeats
+print("Plotting figures of averaged repeat data...")
+mean_pos = compute_mean_array(path=Params.sim_dir, file_name="position.txt", num_sims=Params.nsims, enable_print=True)
+mean_disp = compute_mean_array(path=Params.sim_dir, file_name="displacement.txt", num_sims=Params.nsims, enable_print=True)
+mean_energy = compute_mean_array(path=Params.sim_dir, file_name="energy.txt", num_sims=Params.nsims, enable_print=True)
+acf_disp = compute_acf(np.mean(mean_disp[:, :], axis=0))
+Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
+if Params.run_switching:
+    mean_d = compute_mean_array(path=Params.sim_dir, file_name="stateint.txt", num_sims=Params.nsims, enable_print=True)
+    acf_d = compute_acf(np.mean(mean_d[:, :], axis=0))
+    Plot.plot_acf_d(Params.sim_dir, acf_d)
+print("Done")
