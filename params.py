@@ -3,7 +3,7 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nsims = 5   # Number of simulations
+nsims = 3   # Number of simulations
 dt = 0.01      # Timestep
 nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
@@ -18,7 +18,7 @@ xi = np.array([0, 0])  # Initial oscillator positions
 sim_dir = f"{a:.3g}"
 
 # Bools
-run_switching = True
+run_switching = False
 run_brownian = True
 if run_brownian:
     draw_gaussian = True
