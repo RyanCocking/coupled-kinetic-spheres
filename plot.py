@@ -177,7 +177,7 @@ def plot_acf_multisim(path, acf_list, plot_labels, y_label="Autocorrelation"):
     plt.xlabel("Lag")
     plt.ylabel(f"{y_label:s}")
     plt.xscale('log')
-    if len(acf_list > 1):
+    if len(acf_list[:]) > 1:
         plt.legend()
     save_figure(path, "AutocorrState.png")
     if Params.show_figs:

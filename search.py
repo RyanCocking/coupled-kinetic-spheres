@@ -4,10 +4,10 @@
 
 import params as Params
 import os
-import sys
 import numpy as np
 import fileinput
 import shutil
+import plot as Plot
 
 # NOTE: Duplicate function
 def load_array(path="default/default", file_name="sample.txt", enable_print=False):
@@ -23,7 +23,13 @@ def replace(file, searchExp, replaceExp):
     # Replace a string within a file
    for line in fileinput.input(file, inplace=1):
        line = line.replace(searchExp, replaceExp)
-       sys.stdout.write(line)
+       print(line, end='')
+
+if not Params.run_switching:
+    print("ERROR - Please enable kinetic switching to run a parameter search")
+    quit()
+if Params.a != 0:
+    print("WARNING - Coupling parameter is not set to zero. Search may causes errors.")
 
 # Loop over increasing values of 'a'
 couplings = np.arange(0, 1, step=0.2)  # Not including 1
@@ -36,7 +42,7 @@ for i, a in enumerate(couplings):
     
     # Edit coupling parameter in params.py
     replace("params.py", f"a = {old_a:.3g}", f"a = {a:.3g}")
-        
+
     # Run simulation
     os.system("python coupled.py True")
     
