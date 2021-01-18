@@ -185,12 +185,14 @@ def compute_acf(x):
 # ============================================================================#
 
 # Check for arguments passed to script
-if sys.argv[:] > 1:
+if len(sys.argv[:]) > 1:
     run_param_search = sys.argv[1]
+    print(type(run_param_search))
     if run_param_search:
         print("Running as part of parameter search")
     elif not run_param_search:
         print("Running as individual simulation")
+        
     else:
         print("ERROR - Invalid argument to script")
         print("Exiting")
@@ -202,6 +204,7 @@ else:
 
 print("Initialising...")
 make_dir(Params.sim_dir, run_param_search)
+shutil.copyfile("params.py", f"{Params.sim_dir:s}/params.py.copy")
 
 # Matrices
 C = C_matrix(Params.a)
@@ -211,7 +214,7 @@ inv_C_N = np.matmul(inv_C, N)
 
 # Random numbers
 rng = np.random.default_rng()
-rand = rng.uniform(size=(Params.nsims, Params.npart, Params.nsteps))
+rand = rng.uniform(size=(Params.nreps, Params.npart, Params.nsteps))
 if Params.run_brownian:
     if Params.draw_gaussian:
         # Gaussian random number [0,1]
@@ -255,9 +258,9 @@ print_matrix("2*kB*T*zeta*C", check_N(C)[1])
 # ============================================================================#
 print("Running...")
 
-for sim in range(Params.nsims):
+for sim in range(Params.nreps):
     
-    print("Simulation {0} / {1}".format(sim + 1, Params.nsims), end='\r')
+    print("Simulation {0} / {1}".format(sim + 1, Params.nreps), end='\r')
     
     sub_dir = f"{Params.sim_dir:s}/{sim + 1:d}"
     make_dir(sub_dir)
@@ -301,17 +304,28 @@ for sim in range(Params.nsims):
         
 print("\nDone")
 
-Plot.plot_all()
+if Params.plot_all:
+    Plot.plot_all()
 
-# Calculating and plotting average quantities over repeats
-print("Plotting figures of averaged repeat data...")
-mean_pos = compute_mean_array(path=Params.sim_dir, file_name="position.txt", num_sims=Params.nsims, enable_print=True)
-mean_disp = compute_mean_array(path=Params.sim_dir, file_name="displacement.txt", num_sims=Params.nsims, enable_print=True)
-mean_energy = compute_mean_array(path=Params.sim_dir, file_name="energy.txt", num_sims=Params.nsims, enable_print=True)
+# Calculating and plotting quantities averaged over repeats
+print(" Calculating and plotting averages over repeat data...")
+mean_pos = compute_mean_array(path=Params.sim_dir, file_name="position.txt", num_sims=Params.nreps)
+mean_disp = compute_mean_array(path=Params.sim_dir, file_name="displacement.txt", num_sims=Params.nreps)
+mean_energy = compute_mean_array(path=Params.sim_dir, file_name="energy.txt", num_sims=Params.nreps)
 acf_disp = compute_acf(np.mean(mean_disp[:, :], axis=0))
+
+save_array(sub_dir, "position.txt", mean_pos)
+save_array(sub_dir, "displacement.txt", mean_disp)
+save_array(sub_dir, "energy.txt", mean_energy)
+save_array(sub_dir, "autocorrdisp.txt", acf_disp)
 Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
+
 if Params.run_switching:
-    mean_d = compute_mean_array(path=Params.sim_dir, file_name="stateint.txt", num_sims=Params.nsims, enable_print=True)
+    mean_d = compute_mean_array(path=Params.sim_dir, file_name="stateint.txt", num_sims=Params.nreps)
     acf_d = compute_acf(np.mean(mean_d[:, :], axis=0))
+    
+    save_array(Params.sim_dir, "stateint.txt", mean_d)
+    save_array(Params.sim_dir, "autocorrstate.txt", acf_d)
     Plot.plot_acf_d(Params.sim_dir, acf_d)
+    
 print("Done")

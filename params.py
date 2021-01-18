@@ -3,7 +3,7 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nsims = 3   # Number of repeats per simulation
+nreps = 2   # Number of repeats per simulation
 dt = 0.01      # Timestep
 nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
@@ -25,7 +25,9 @@ if run_brownian:
 else:
     draw_gaussian = False
 show_figs = False  # Display figures as they are plotted
+plot_all = False  # Plot figures for every repeat (expensive)
 
+# Error checks
 if a < 0 or a >= 1:
     print(f"WARNING: Coupling parameter 'a' is set to {a:.3g}. Choose a value within 0 <= a < 1 to avoid instability.")
     print("Exiting")

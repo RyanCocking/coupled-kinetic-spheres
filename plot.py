@@ -7,11 +7,15 @@ import matplotlib.pyplot as plt
 # PLOTTING                                                                    #
 # ============================================================================#
 
+# There is a lot of code here that could have been derived from a single, general
+# plotting function. Hooray for laziness!
+
 # ============ Basic I/O ============ #
 
-def save_figure(folder = ".", fig_name = "Figure.png", enable_print=True):
+def save_figure(folder = ".", fig_name = "Figure.png", enable_print=False):
     # Save a figure to a folder and print confirmation to stdout.
     # Include the file extension in fig_name!
+    plt.tight_layout()
     plt.savefig(f"{folder:s}/{fig_name:s}")
     if enable_print:
         print(f"Saved {fig_name:s} to directory '{folder:s}'")
@@ -28,7 +32,7 @@ def load_array(path="default/default", file_name="sample.txt", enable_print=Fals
 
 # ============ Plot individual figures ============ #
 
-def plot_pos(sub_dir, pos):
+def plot_pos(path, pos):
     # Position, x
     plt.plot(Params.steps, pos[0, :], label="Oscillator 1")
     plt.plot(Params.steps, pos[1, :], label="Oscillator 2")
@@ -40,12 +44,12 @@ def plot_pos(sub_dir, pos):
     plt.xlabel("Steps")
     plt.ylabel("Position")
     plt.legend()
-    save_figure(sub_dir, "Pos.png")
+    save_figure(path, "Pos.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_disp(sub_dir, disp):
+def plot_disp(path, disp):
     # Displacement, X = x - x0
     plt.plot(Params.steps, disp[0, :], label="Oscillator 1")
     plt.plot(Params.steps, disp[1, :], label="Oscillator 2")
@@ -56,12 +60,12 @@ def plot_disp(sub_dir, disp):
     plt.xlabel("Steps")
     plt.ylabel("Displacement")
     plt.legend()
-    save_figure(sub_dir, "Disp.png")
+    save_figure(path, "Disp.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_disp2(sub_dir, disp):
+def plot_disp2(path, disp):
     # Displacement squared, X^2 = (x - x0)^2
     plt.plot(Params.steps, np.square(disp[0, :]), label="Oscillator 1")
     plt.plot(Params.steps, np.square(disp[1, :]), label="Oscillator 2")
@@ -71,12 +75,12 @@ def plot_disp2(sub_dir, disp):
     plt.xlabel("Steps")
     plt.ylabel("Displacement$^2$")
     plt.legend()
-    save_figure(sub_dir, "DispSq.png")
+    save_figure(path, "DispSq.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_energy(sub_dir, energy):
+def plot_energy(path, energy):
     # Energy (kBT) = < 0.5 k X^2 >
     plt.plot(Params.steps, np.mean(energy[:, :], axis=0), label="Average over oscillators")
     mean = np.mean(energy[:, :])*np.ones(Params.nsteps)
@@ -86,24 +90,24 @@ def plot_energy(sub_dir, energy):
     plt.xlabel("Steps")
     plt.ylabel("Energy ($k_B T$)")
     plt.legend()
-    save_figure(sub_dir, "Energy.png")
+    save_figure(path, "Energy.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_acf_disp(sub_dir, acf_disp):
+def plot_acf_disp(path, acf_disp):
     # Displacement autocorrelation
     plt.plot(Params.steps, acf_disp[:])
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
     plt.xlabel("Lag")
     plt.ylabel("Displacement autocorrelation")
     plt.xscale('log')
-    save_figure(sub_dir, "AutocorrDisp.png")
+    save_figure(path, "AutocorrDisp.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_p(sub_dir, p):
+def plot_p(path, p):
     # Probability of state switch, p = exp(-dU/kBT)
     plt.plot(Params.steps, p[0, :], label="Oscillator 1")
     plt.plot(Params.steps, p[1, :], label="Oscillator 2")
@@ -112,12 +116,12 @@ def plot_p(sub_dir, p):
     plt.xlabel("Steps")
     plt.ylabel("Probability")
     plt.legend()
-    save_figure(sub_dir, "Prob.png")
+    save_figure(path, "Prob.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_d(sub_dir, d):
+def plot_d(path, d):
     # Kinetic state integer, d = +-1
     plt.plot(Params.steps, d[0, :], label="Oscillator 1")
     plt.plot(Params.steps, d[1, :], label="Oscillator 2")
@@ -126,36 +130,62 @@ def plot_d(sub_dir, d):
     plt.xlabel("Steps")
     plt.ylabel("State integer")
     plt.legend()
-    save_figure(sub_dir, "StateInt.png")
+    save_figure(path, "StateInt.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_switch_sum(sub_dir, switch_sum):
+def plot_switch_sum(path, switch_sum):
     # Number of state changes
     plt.plot(Params.steps, switch_sum[0, :], label="Oscillator 1")
     plt.plot(Params.steps, switch_sum[1, :], label="Oscillator 2")
     plt.xlabel("Steps")
     plt.ylabel("Cumulative sum of state changes")
     plt.legend()
-    save_figure(sub_dir, "SwitchCumSum.png")
+    save_figure(path, "SwitchCumSum.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_acf_d(sub_dir, acf_d):
+def plot_acf_d(path, acf_d):
     # State integer autocorrelation
     plt.plot(Params.steps, acf_d[:])
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
     plt.xlabel("Lag")
     plt.ylabel("State autocorrelation")
     plt.xscale('log')
-    save_figure(sub_dir, "AutocorrState.png")
+    save_figure(path, "AutocorrState.png")
     if Params.show_figs:
         plt.show()
     plt.close()
+    
+def plot_acf_multisim(path, acf_list, plot_labels, y_label="Autocorrelation"):
+    # Autocorrelation from multiple simulations (a parameter search)
+    if len(acf_list[:]) < 1 or len(plot_labels[:]) < 1:
+        print("ERROR - Lists are empty")
+        print("Exiting")
+        quit()
+    elif len(acf_list[:]) != len(plot_labels[:]):
+        print("ERROR - Mismatch in list lengths")
+        print("Exiting")
+        quit() 
+    
+    for i, acf in enumerate(acf_list[:]):
+        plt.plot(Params.steps, acf, label=plot_labels[i])
+    plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
+    
+    plt.xlabel("Lag")
+    plt.ylabel(f"{y_label:s}")
+    plt.xscale('log')
+    if len(acf_list > 1):
+        plt.legend()
+    save_figure(path, "AutocorrState.png")
+    if Params.show_figs:
+        plt.show()
+    plt.close()
+    
 
-def plot_dW(sub_dir, dW):
+def plot_dW(path, dW):
     # Wiener process vector, dW
     plt.plot(Params.steps, dW[0, :], label="Oscillator 1")
     plt.plot(Params.steps, dW[1, :], label="Oscillator 2")
@@ -164,12 +194,12 @@ def plot_dW(sub_dir, dW):
     plt.xlabel("Steps")
     plt.ylabel("dW")
     plt.legend()
-    save_figure(sub_dir, "dW.png")
+    save_figure(path, "dW.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_dW2(sub_dir, dW):
+def plot_dW2(path, dW):
     # dW^2
     plt.plot(Params.steps, np.square(dW[0, :]), label="Oscillator 1")
     plt.plot(Params.steps, np.square(dW[1, :]), label="Oscillator 2")
@@ -178,41 +208,42 @@ def plot_dW2(sub_dir, dW):
     plt.xlabel("Steps")
     plt.ylabel("$dW^2$")
     plt.legend()
-    save_figure(sub_dir, "dWSq.png")
+    save_figure(path, "dWSq.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
 # ============ Plot multiple figures at once ============ #
 
-def plot_core(sub_dir, pos, disp, energy, acf_disp):
+def plot_core(path, pos, disp, energy, acf_disp):
     # Core figures, relevant for every simulation
-    plot_pos(sub_dir, pos)
-    plot_disp(sub_dir, disp)
-    plot_disp2(sub_dir, disp)
-    plot_energy(sub_dir, energy)
+    plot_pos(path, pos)
+    plot_disp(path, disp)
+    plot_disp2(path, disp)
+    plot_energy(path, energy)
+    plot_acf_disp(path, acf_disp)
 
-def plot_switching(sub_dir, p, d, switch_sum, acf_d):
+def plot_switching(path, p, d, switch_sum, acf_d):
     # Kinetic switching figures
-    plot_p(sub_dir, p)
-    plot_d(sub_dir, d)
-    plot_switch_sum(sub_dir, switch_sum)
-    plot_acf_d(sub_dir, acf_d)
+    plot_p(path, p)
+    plot_d(path, d)
+    plot_switch_sum(path, switch_sum)
+    plot_acf_d(path, acf_d)
 
-def plot_brownian(sub_dir, dW):
+def plot_brownian(path, dW):
     # Brownian motion figures
-    plot_dW(sub_dir, dW)
-    plot_dW2(sub_dir, dW)
+    plot_dW(path, dW)
+    plot_dW2(path, dW)
 
 def plot_sim_mean():
-    """Plot figures with data averaged over simulation repeats"""
+    """Plot figures with data averaged over repeats"""
 
 def plot_all():
     """Plot all figures"""
 
     print("Plotting all figures...")
-    for sim in range(Params.nsims):
-        print("Simulation {0} / {1}".format(sim + 1, Params.nsims), end='\r')
+    for sim in range(Params.nreps):
+        print("Simulation {0} / {1}".format(sim + 1, Params.nreps), end='\r')
 
         # Load simulation data
         sub_dir = f"{Params.sim_dir:s}/{sim + 1:d}"
