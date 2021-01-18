@@ -28,11 +28,13 @@ def replace(file, searchExp, replaceExp):
 if not Params.run_switching:
     print("ERROR - Please enable kinetic switching to run a parameter search")
     quit()
-if Params.a != 0:
-    print("WARNING - Coupling parameter is not set to zero. Search may causes errors.")
 
 # Loop over increasing values of 'a'
 couplings = np.arange(0, 1, step=0.2)  # Not including 1
+if Params.a != couplings[-1]:
+    print("WARNING - Coupling parameter in params.py is not equal to initial search value. Parameter edit may not work.")
+    print("Apologies for the jank!")
+
 plot_data = []
 plot_labels = []
 old_a = couplings[0]
@@ -47,7 +49,7 @@ for i, a in enumerate(couplings):
     os.system("python coupled.py True")
     
     # Load data
-    data = load_array(f"{Params.sim_dir:s}", "autocorrstate.txt", True)
+    data = load_array(f"{a:.3g}", "autocorrstate.txt", True)
     plot_data.append(data)
     plot_labels.append(f"a = {a:.3g}")
     
