@@ -31,10 +31,13 @@ if not Params.run_switching:
 
 # Loop over increasing values of 'a'
 couplings = np.arange(0, 1, step=0.2)  # Not including 1
-if Params.a != couplings[-1]:
-    print("WARNING - Coupling parameter in params.py is not equal to initial search value. Parameter edit may not work.")
+# JANK ALERT, PLEASE FIX!!
+if Params.a != couplings[0]:
+    print(f"ERROR - Coupling parameter in params.py ({Params.a:.3g}) is not equal to initial search value, ({couplings[0]:.3g})")
     print("Apologies for the jank!")
-
+    print("Exiting")
+    quit()
+    
 plot_data = []
 plot_labels = []
 old_a = couplings[0]

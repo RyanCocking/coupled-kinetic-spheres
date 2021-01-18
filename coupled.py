@@ -51,8 +51,13 @@ def make_dir(folder="default", skip=False, print_success=False):
     except FileExistsError:
         print("The simulation will overwrite the directory '{0}'. Proceed? (y/n)".format(folder))
         while True:
-            prompt = input()
-            if prompt == "y" or prompt == "Y" or skip:
+            if skip:
+                prompt = "y"
+                print("Check skipped")
+            else:
+                prompt = input()
+            if prompt == "y" or prompt == "Y":
+                print("Overwriting")
                 shutil.rmtree(folder)
                 os.mkdir(folder)
                 break
@@ -186,8 +191,11 @@ def compute_acf(x):
 
 # Check for arguments passed to script
 if len(sys.argv[:]) > 1:
-    run_param_search = sys.argv[1]
-    print(type(run_param_search))
+    if sys.argv[1] == "True":
+        run_param_search = True
+    else:
+        run_param_search = False
+        
     if run_param_search:
         print("Running as part of parameter search")
     elif not run_param_search:
