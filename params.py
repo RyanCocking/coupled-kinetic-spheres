@@ -40,7 +40,7 @@ if draw_gaussian == False:
 def print_params():
     print("Simulation parameters:")
     print("  {0} : {1:.3g}".format("npart", npart))
-    print("  {0} : {1:.3g}".format("nsims", nsims))
+    print("  {0} : {1:.3g}".format("nreps", nreps))
     print("  {0} : {1:.3g}".format("dt", dt))
     print("  {0} : {1:.3g}".format("nsteps", nsteps))
     print("  {0} : {1:.3g}".format("kB", kB))
