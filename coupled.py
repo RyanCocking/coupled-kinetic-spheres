@@ -164,20 +164,22 @@ def check_N(C):
     coef = 2 * Params.kB * Params.T * Params.zeta
     return [np.matmul(N, N), coef*C]
 
-def compute_switch_sum(state_int_array):
+def compute_switches(state_int_array):
     # Brute force and stupid way of counting the number of kinetic switches
     # that occurred in a simulation. 
     # state_int_array is an array of integers (-1 or +1) of shape 2xN
     #
-    # returns a 2xN array
-    switch_sum = np.zeros((Params.npart, Params.nsteps), dtype=np.int)
+    # returns two 2xN arrays:
+    #   1) switches: 1 if a switch occurred, 0 if not
+    #   2) cumulative sum of switches
+    switches = np.zeros((Params.npart, Params.nsteps), dtype=np.int)
     for i in range(state_int_array.shape[1]):
         if d[0, i - 1] == -1 and d[0, i] == 1 or d[0, i-1] == 1 and d[0, i] == -1:
-            switch_sum[0, i] = 1
+            switches[0, i] = 1
         if d[1, i - 1] == -1 and d[1, i] == 1 or d[1, i-1] == 1 and d[1, i] == -1:
-            switch_sum[1, i] = 1
+            switches[1, i] = 1
 
-    return np.cumsum(switch_sum[:, :], axis=1)
+    return switches, np.cumsum(switches[:, :], axis=1)
 
 def compute_acf(x):
     # Get the cross-correlation of a 1D array with itself (autocorrelation)
@@ -276,13 +278,21 @@ for sim in range(Params.nreps):
     for step in Params.steps[1:]:
         t = step * Params.dt
 
-        # Kinetic state
-        # Should 2kx be positive always? READ BEN CH. 4
-        p[:, step-1] = compute_switch_probability(2 * Params.k * (pos[:, step-1] - Params.x0[:]))
+        # Kinetic state, dU = U2 = U1 = 2kX
+        # If 2kX is always positive, this corresponds to a transition being
+        # most likely to occur when the difference in energy between the 
+        # states is zero. Sounds sensible!
+        #
+        # P = exp(0) = 1    >> Oscillator is at eqbm position
+        # P = exp(-10) ~ 0  >> Oscillator is far from eqbm
+        disp[:, step-1] = pos[:, step-1] - Params.x0[:]
+        dU = 2 * Params.k * np.abs(disp[:, step-1])
+        p[:, step-1] = np.exp(-dU / (Params.kB * Params.T))
         d[:, step-1] = attempt_switch(step-1, rand[sim, :, step-1], p[:, step-1], d[:, step-1])
 
         # ODE terms (Euler scheme)
-        spring_term = -Params.k * np.matmul(inv_C, pos[:, step-1] - Params.x0[:]) * Params.dt
+        # NOTE: can probably reduce the number of matmuls
+        spring_term = -Params.k * np.matmul(inv_C, disp[:, step-1]) * Params.dt
         switch_term = Params.k * np.matmul(inv_C, d[:, step-1]) * Params.dt
         brownian_term = np.matmul(inv_C_N, dW[sim, :, step-1])
 
@@ -290,10 +300,8 @@ for sim in range(Params.nreps):
         pos[:, step] = pos[:, step-1] + Params.inv_zeta * (spring_term[:] + switch_term[:] + brownian_term[:])
 
     # Record data
-    disp[0, :] = pos[0, :] - Params.x0[0]
-    disp[1, :] = pos[1, :] - Params.x0[1]
     energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
-    switch_sum = compute_switch_sum(d[:, :])
+    switches, switch_sum = compute_switches(d[:, :])
     acf_disp = compute_acf(np.mean(disp[:, :], axis=0))
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
@@ -307,6 +315,7 @@ for sim in range(Params.nreps):
     if Params.run_switching:
         save_array(sub_dir, "prob.txt", p)
         save_array(sub_dir, "stateint.txt", d)
+        save_array(sub_dir, "switches.txt", switches)
         save_array(sub_dir, "switchcumsum.txt", switch_sum)
         save_array(sub_dir, "autocorrstate.txt", acf_d)
         
@@ -326,6 +335,7 @@ save_array(sub_dir, "position.txt", mean_pos)
 save_array(sub_dir, "displacement.txt", mean_disp)
 save_array(sub_dir, "energy.txt", mean_energy)
 save_array(sub_dir, "autocorrdisp.txt", acf_disp)
+
 Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
 
 if Params.run_switching:

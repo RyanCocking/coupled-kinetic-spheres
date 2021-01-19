@@ -44,7 +44,7 @@ def plot_pos(path, pos):
     plt.xlabel("Steps")
     plt.ylabel("Position")
     plt.legend()
-    save_figure(path, "Pos.png")
+    save_figure(path, "Pos_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -60,7 +60,18 @@ def plot_disp(path, disp):
     plt.xlabel("Steps")
     plt.ylabel("Displacement")
     plt.legend()
-    save_figure(path, "Disp.png")
+    save_figure(path, "Disp_Time.png")
+    if Params.show_figs:
+        plt.show()
+    plt.close()
+    
+    # Probability density function
+    plt.hist(disp[0, :], bins='auto', density=True, label="Oscillator 1", edgecolor='Blue', facecolor='None')
+    plt.hist(disp[1, :], bins='auto', density=True, label="Oscillator 2", edgecolor='Red', facecolor='None')
+    plt.xlabel("Displacement")
+    plt.ylabel("Probability density")
+    plt.legend()
+    save_figure(path, "DispPDF.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -75,7 +86,7 @@ def plot_disp2(path, disp):
     plt.xlabel("Steps")
     plt.ylabel("Displacement$^2$")
     plt.legend()
-    save_figure(path, "DispSq.png")
+    save_figure(path, "DispSq_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -90,7 +101,7 @@ def plot_energy(path, energy):
     plt.xlabel("Steps")
     plt.ylabel("Energy ($k_B T$)")
     plt.legend()
-    save_figure(path, "Energy.png")
+    save_figure(path, "Energy_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -102,21 +113,32 @@ def plot_acf_disp(path, acf_disp):
     plt.xlabel("Lag")
     plt.ylabel("Displacement autocorrelation")
     plt.xscale('log')
-    save_figure(path, "AutocorrDisp.png")
+    save_figure(path, "AutocorrDisp_Lag.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_p(path, p):
+def plot_p(path, p, disp):
     # Probability of state switch, p = exp(-dU/kBT)
-    plt.plot(Params.steps, p[0, :], label="Oscillator 1")
-    plt.plot(Params.steps, p[1, :], label="Oscillator 2")
-    mean = np.mean(p[:, :])*np.ones(Params.nsteps)
-    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(p[:, :]) = {0:.1g}".format(mean[0]))
+    # Probability vs. timesteps
+    plt.plot(Params.steps, p[0, :], 'bo', label="Oscillator 1", ms=0.5)
+    plt.plot(Params.steps, p[1, :], 'ro', label="Oscillator 2", ms=0.5)
     plt.xlabel("Steps")
-    plt.ylabel("Probability")
+    plt.ylabel("Probability of state switch")
     plt.legend()
-    save_figure(path, "Prob.png")
+    save_figure(path, "ProbSwitch_Time.png")
+    if Params.show_figs:
+        plt.show()
+    plt.close()
+    
+    # Probability vs. displacement
+    plt.plot(disp[0, :], p[0, :], 'bo', label="Oscillator 1", ms=0.5)
+    plt.plot(disp[1, :], p[1, :], 'ro', label="Oscillator 2", ms=0.5)
+    plt.xlabel("Displacement")
+    plt.ylabel("Probability of state switch")
+    plt.ylim(0, 2)
+    plt.legend()
+    save_figure(path, "ProbSwitch_Disp.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -130,19 +152,44 @@ def plot_d(path, d):
     plt.xlabel("Steps")
     plt.ylabel("State integer")
     plt.legend()
-    save_figure(path, "StateInt.png")
+    save_figure(path, "StateInt_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
 
-def plot_switch_sum(path, switch_sum):
-    # Number of state changes
+def plot_switches(path, disp, switches, switch_sum):
+    # Filter displacements where a switch occurred (merges data of both oscillators)
+    mask = np.nonzero(switches)
+    switches = switches[mask]
+    disp = disp[mask]
+    
+    # State change (switches) vs. displacement (1 = yes, 0 = no)
+    # plt.plot(disp[0, :], switches[0, :], 'bo', label="Oscillator 1", ms=0.5)
+    # plt.plot(disp[1, :], switches[1, :], 'ro', label="Oscillator 2", ms=0.5)
+    # plt.xlabel("Displacement")
+    # plt.ylabel("State switch event")
+    # plt.legend()
+    # save_figure(path, "Switches_Disp.png")
+    # if Params.show_figs:
+    #     plt.show()
+    # plt.close()
+
+    # Probability density function
+    plt.hist(disp[:], bins='auto', density=True, edgecolor='Blue', facecolor='None')
+    plt.xlabel("Displacements where switches occurred")
+    plt.ylabel("Probability density")
+    save_figure(path, "DispSwitchPDF.png")
+    if Params.show_figs:
+        plt.show()
+    plt.close()
+    
+    # Cumulative sim of switches
     plt.plot(Params.steps, switch_sum[0, :], label="Oscillator 1")
     plt.plot(Params.steps, switch_sum[1, :], label="Oscillator 2")
     plt.xlabel("Steps")
-    plt.ylabel("Cumulative sum of state changes")
+    plt.ylabel("Cumulative sum of switches")
     plt.legend()
-    save_figure(path, "SwitchCumSum.png")
+    save_figure(path, "SwitchCumSum_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -152,9 +199,9 @@ def plot_acf_d(path, acf_d):
     plt.plot(Params.steps, acf_d[:])
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
     plt.xlabel("Lag")
-    plt.ylabel("State autocorrelation")
+    plt.ylabel("State integer autocorrelation")
     plt.xscale('log')
-    save_figure(path, "AutocorrState.png")
+    save_figure(path, "AutocorrStateInt_Lag.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -179,7 +226,7 @@ def plot_acf_multisim(path, acf_list, plot_labels, y_label="Autocorrelation"):
     plt.xscale('log')
     if len(acf_list[:]) > 1:
         plt.legend()
-    save_figure(path, "AutocorrState.png")
+    save_figure(path, "AutocorrState_Lag.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -194,7 +241,7 @@ def plot_dW(path, dW):
     plt.xlabel("Steps")
     plt.ylabel("dW")
     plt.legend()
-    save_figure(path, "dW.png")
+    save_figure(path, "dW_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -208,7 +255,7 @@ def plot_dW2(path, dW):
     plt.xlabel("Steps")
     plt.ylabel("$dW^2$")
     plt.legend()
-    save_figure(path, "dWSq.png")
+    save_figure(path, "dWSq_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -223,11 +270,11 @@ def plot_core(path, pos, disp, energy, acf_disp):
     plot_energy(path, energy)
     plot_acf_disp(path, acf_disp)
 
-def plot_switching(path, p, d, switch_sum, acf_d):
+def plot_switching(path, p, disp, d, switches, switch_sum, acf_d):
     # Kinetic switching figures
-    plot_p(path, p)
+    plot_p(path, p, disp)
     plot_d(path, d)
-    plot_switch_sum(path, switch_sum)
+    plot_switches(path, disp, switches, switch_sum)
     plot_acf_d(path, acf_d)
 
 def plot_brownian(path, dW):
@@ -260,6 +307,7 @@ def plot_all():
         if Params.run_switching:
             p = load_array(sub_dir, "prob.txt")
             d = load_array(sub_dir, "stateint.txt")
+            switches = load_array(sub_dir, "switches.txt")
             switch_sum = load_array(sub_dir, "switchcumsum.txt")
             acf_d = load_array(sub_dir, "autocorrstate.txt")
             
@@ -268,6 +316,6 @@ def plot_all():
         if Params.run_brownian:
             plot_brownian(sub_dir, dW)
         if Params.run_switching:
-            plot_switching(sub_dir, p, d, switch_sum, acf_d)
+            plot_switching(sub_dir, p, disp, d, switches, switch_sum, acf_d)
 
     print("\nDone")
