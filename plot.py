@@ -2,6 +2,7 @@ import params as Params
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from common import *
 
 # ============================================================================#
 # PLOTTING                                                                    #
@@ -9,8 +10,6 @@ import matplotlib.pyplot as plt
 
 # There is a lot of code here that could have been derived from a single, general
 # plotting function. Hooray for laziness!
-
-# ============ Basic I/O ============ #
 
 def save_figure(folder = ".", fig_name = "Figure.png", enable_print=False):
     # Save a figure to a folder and print confirmation to stdout.
@@ -20,16 +19,6 @@ def save_figure(folder = ".", fig_name = "Figure.png", enable_print=False):
     if enable_print:
         print(f"Saved {fig_name:s} to directory '{folder:s}'")
 
-# NOTE: Duplicate function
-def load_array(path="default/default", file_name="sample.txt", enable_print=False):
-    # Load some numpy array data from a given path. Shape of loaded array will depend
-    # on what was saved.
-    # Include file extension in file_name!
-    data = np.loadtxt(f"{path:s}/{file_name:s}")
-    if enable_print:
-        print(f"Loaded {file_name:s} from directory '{path:s}'")
-    return data
-
 # ============ Plot individual figures ============ #
 
 def plot_pos(path, pos):
@@ -37,7 +26,7 @@ def plot_pos(path, pos):
     plt.plot(Params.steps, pos[0, :], label="Oscillator 1")
     plt.plot(Params.steps, pos[1, :], label="Oscillator 2")
     mean = np.mean(pos[:, :])*np.ones(Params.nsteps)
-    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(pos[:, :]) = {0:.1g}".format(mean[0]))
+    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(pos[:, :]) = {0:.2g}".format(mean[0]))
     if Params.run_brownian:
         plt.plot(Params.steps, Params.x0[0]*np.ones(Params.nsteps), 'k--', label="$x_{0,1}$")
         plt.plot(Params.steps, Params.x0[1]*np.ones(Params.nsteps), 'b--', label="$x_{0,2}$")
@@ -54,7 +43,7 @@ def plot_disp(path, disp):
     plt.plot(Params.steps, disp[0, :], label="Oscillator 1")
     plt.plot(Params.steps, disp[1, :], label="Oscillator 2")
     mean = np.mean(disp[:, :])*np.ones(Params.nsteps)
-    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(disp[:, :]) = {0:.1g}".format(mean[0]))
+    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(disp[:, :]) = {0:.2g}".format(mean[0]))
     if Params.run_brownian:
         plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', label="$<x-x_0>$")
     plt.xlabel("Steps")
@@ -93,7 +82,7 @@ def plot_energy(path, energy):
     # Energy (kBT) = < 0.5 k X^2 >
     plt.plot(Params.steps, np.mean(energy[:, :], axis=0), label="Average over oscillators")
     mean = np.mean(energy[:, :])*np.ones(Params.nsteps)
-    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(energy[:]) = {0:.1g}".format(mean[0]))
+    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(energy[:]) = {0:.2g}".format(mean[0]))
     if Params.run_brownian:
         plt.plot(Params.steps, 0.5*Params.kB*Params.T*np.ones(Params.nsteps), "k--", label="$0.5k_BT$")
     plt.xlabel("Steps")
@@ -147,7 +136,7 @@ def plot_d(path, d, ddot):
     plt.plot(Params.steps, d[0, :], 'bo', ms=0.5, label="Oscillator 1")
     plt.plot(Params.steps, d[1, :], 'ro', ms=0.5, label="Oscillator 2")
     mean = np.mean(d[:, :])*np.ones(Params.nsteps)
-    plt.plot(Params.steps, mean[:], 'k--', label="np.mean(d[:, :]) = {0:.1g}".format(mean[0]))
+    plt.plot(Params.steps, mean[:], 'k--', label="np.mean(d[:, :]) = {0:.2g}".format(mean[0]))
     plt.xlabel("Steps")
     plt.ylabel("State integer")
     plt.legend()

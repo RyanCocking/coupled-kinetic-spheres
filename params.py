@@ -3,7 +3,7 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nreps = 3   # Number of repeats per simulation
+nreps = 1000   # Number of repeats per simulation
 dt = 0.01      # Timestep
 nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
@@ -16,7 +16,8 @@ inv_zeta = 1.0 / zeta
 k = 1      # Harmonic potential spring constant
 x0 = np.array([2, -2])  # Equilibrium oscillator positions
 xi = np.array([0, 0])  # Initial positions
-init_state = np.array([1, 1], dtype='int32')  # Initial kinetic states (currently only support for 1 or -1)
+init_state = np.array([1, 1], dtype='int32')  # Initial kinetic states (only 1 or -1 supported)
+rates = np.array([1.0, 1.0])  # Transition rates between states, rAB (-1 to 1) and rBA (1 to -1)
 sim_dir = f"{a:.3g}"  # Master directory for all data
 
 # Bools
@@ -31,13 +32,15 @@ plot_all = False  # Plot figures for every repeat (not recommended for many repe
 
 # Error checks
 if a < 0 or a >= 1:
-    print(f"WARNING: Coupling parameter 'a' is set to {a:.3g}. Choose a value within 0 <= a < 1 to avoid instability.")
+    print(f"ERROR: Coupling parameter 'a' is set to {a:.3g}. Choose a value within 0 <= a < 1 to avoid instability.")
     print("Exiting")
     quit()
-if draw_gaussian == False:
-    print(f"WARNING: Uniform RNG is currently broken. Make sure 'draw_gaussian' is set to True.")
+if run_switching and 1 not in init_state[:] and -1 not in init_state[:]:
+    print(f"ERROR: Initial kinetic states are currently set to {init_state[0]:d} and {init_state[1]:d}. Only 1 and -1 are currently supported.")
     print("Exiting")
     quit()
+if not draw_gaussian:
+    print(f"WARNING: Uniform RNG is currently broken. Make sure 'draw_gaussian' is set to True for correct Brownian behaviour.")
 
 def print_params():
     print("Simulation parameters:")

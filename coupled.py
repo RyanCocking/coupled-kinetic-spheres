@@ -38,54 +38,11 @@ import sys
 import shutil
 import params as Params
 import plot as Plot
+from common import *
 
 # ============================================================================#
 # ROUTINES                                                                    #
 # ============================================================================#
-
-def make_dir(folder="default", skip=False, print_success=False):
-    # Attempt to create a directory and warn the user of overwriting
-    
-    try:
-        os.mkdir(folder)
-    except FileExistsError:
-        print("The simulation will overwrite the directory '{0}'. Proceed? (y/n)".format(folder))
-        while True:
-            if skip:
-                prompt = "y"
-                print("Check skipped")
-            else:
-                prompt = input()
-            if prompt == "y" or prompt == "Y":
-                print("Overwriting")
-                shutil.rmtree(folder)
-                os.mkdir(folder)
-                break
-            elif prompt == "n" or prompt == "N":
-                print("Exiting")
-                quit()
-            else:
-                print("Invalid entry")
-                continue
-    if print_success:
-        print("Created simulation directory '{0}'".format(folder))
-    
-# NOTE: Duplicate function
-def load_array(path="default/default", file_name="sample.txt", enable_print=False):
-    # Load some numpy array data from a given path. Shape of loaded array will depend
-    # on what was saved.
-    # Include file extension in file_name!
-    data = np.loadtxt(f"{path:s}/{file_name:s}")
-    if enable_print:
-        print(f"Loaded {file_name:s} from directory '{path:s}'")
-    return data
-
-def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10), enable_print=False):
-    # Save some numpy array data (of any shape) to a given path.
-    # Include file extension in file_name!
-    np.savetxt(f"{path:s}/{file_name:s}", data)
-    if enable_print:
-        print(f"Saved {file_name:s} to directory '{path:s}'")
         
 def compute_mean_array(path="default", file_name="sample.txt", num_reps=1, enable_print=False):
     # Return the mean average taken over repeats.
@@ -125,7 +82,8 @@ def compute_switch_probability(diff):
 
 def attempt_kinetic_switch(state, energy_diff, rand):
     """Alternate version of function below. Probabilities
-    are capped at 1 due to dU always being positive.""""
+    are capped at 1 due to dU always being positive. Precludes
+    the use of rate constants."""
     prob = np.zeros(Params.npart)
     energy_diff = np.abs(energy_diff[:])
     
@@ -147,14 +105,18 @@ def attempt_state_transition(state, energy_diff, rand):
     
     # Loop over oscillators
     for i in range(Params.npart):
-        if state[i] == 1:
-            prob[i] = np.exp(-energy_diff[i] * Params.inv_kBT)
-        elif state[i] == -1:
-            prob[i] = np.exp(energy_diff[i] * Params.inv_kBT)
-        else:
+        if state[i] == -1:
+            # A to B (-1 to 1)
+            prob[i] = Params.rates[0] * np.exp(energy_diff[i] * Params.inv_kBT)
+        elif state[i] == 1:
+            # B to A (1 to -1)
+            prob[i] = Params.rates[1] * np.exp(-energy_diff[i] * Params.inv_kBT)
+        elif state[i] == 0 and Params.run_switching:
             print("ERROR - State unassigned during transition")
             print("Exiting")
             quit()
+        else:
+            break
             
         # Flip the sign of the state integer
         if rand[i] < prob[i]:

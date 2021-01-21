@@ -1,16 +1,18 @@
 import params as Params
 import numpy as np
 from vpython import *
+from common import *
 
 # ============================================================================#
 # ANIMATION                                                                   #
 # ============================================================================#
 
 print("Loading data...")
-pos = np.loadtxt(f"{Params.sim_dir:s}/1/position.txt")
+load_dir = f"{Params.sim_dir:s}/1"
+pos = load_array(load_dir, "position.txt", True)
 if Params.run_switching:
-    d = np.loadtxt(f"{Params.sim_dir:s}/1/stateint.txt")
-    switch_sum = np.loadtxt(f"{Params.sim_dir:s}/1/switchcumsum.txt")
+    d = load_array(load_dir, "stateint.txt", True)
+    switch_sum = load_array(load_dir, file_name="switchcumsum.txt", True)
 print("Done")
 
 print("Animating trajectory...")
