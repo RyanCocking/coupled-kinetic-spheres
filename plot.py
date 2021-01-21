@@ -39,8 +39,8 @@ def plot_pos(path, pos):
     mean = np.mean(pos[:, :])*np.ones(Params.nsteps)
     plt.plot(Params.steps, mean[:], 'r--', label="np.mean(pos[:, :]) = {0:.1g}".format(mean[0]))
     if Params.run_brownian:
-        plt.plot(Params.steps, Params.x0[0]*np.ones(Params.nsteps), 'k--', label="$=x_{0,1}=$"+"{0:.2g}".format(Params.x0[0]))
-        plt.plot(Params.steps, Params.x0[1]*np.ones(Params.nsteps), 'b--', label="$x_{0,2}=$"+"{0:.2g}".format(Params.x0[1]))
+        plt.plot(Params.steps, Params.x0[0]*np.ones(Params.nsteps), 'k--', label="$x_{0,1}$")
+        plt.plot(Params.steps, Params.x0[1]*np.ones(Params.nsteps), 'b--', label="$x_{0,2}$")
     plt.xlabel("Steps")
     plt.ylabel("Position")
     plt.legend()
@@ -56,7 +56,7 @@ def plot_disp(path, disp):
     mean = np.mean(disp[:, :])*np.ones(Params.nsteps)
     plt.plot(Params.steps, mean[:], 'r--', label="np.mean(disp[:, :]) = {0:.1g}".format(mean[0]))
     if Params.run_brownian:
-        plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', label="$<x-x_0>=0$")
+        plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', label="$<x-x_0>$")
     plt.xlabel("Steps")
     plt.ylabel("Displacement")
     plt.legend()
@@ -95,7 +95,7 @@ def plot_energy(path, energy):
     mean = np.mean(energy[:, :])*np.ones(Params.nsteps)
     plt.plot(Params.steps, mean[:], 'r--', label="np.mean(energy[:]) = {0:.1g}".format(mean[0]))
     if Params.run_brownian:
-        plt.plot(Params.steps, 0.5*Params.kB*Params.T*np.ones(Params.nsteps), "k--", label="$0.5k_BT$ = {0:.2g}".format(0.5*Params.kB*Params.T))
+        plt.plot(Params.steps, 0.5*Params.kB*Params.T*np.ones(Params.nsteps), "k--", label="$0.5k_BT$")
     plt.xlabel("Steps")
     plt.ylabel("Energy ($k_B T$)")
     plt.legend()
@@ -123,6 +123,7 @@ def plot_p(path, p, disp):
     plt.plot(Params.steps, p[1, :], 'ro', label="Oscillator 2", ms=0.5)
     plt.xlabel("Steps")
     plt.ylabel("Probability of state switch")
+    plt.ylim(0, 1)
     plt.legend()
     save_figure(path, "ProbSwitch_Time.png")
     if Params.show_figs:

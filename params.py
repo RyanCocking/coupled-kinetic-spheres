@@ -3,7 +3,7 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nreps = 1000   # Number of repeats per simulation
+nreps = 3   # Number of repeats per simulation
 dt = 0.01      # Timestep
 nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
@@ -11,11 +11,12 @@ kB = 1     # Boltzmann constant
 T = 1      # Temperature
 a = 0      # HD coupling strength, 0 <= a < 1
 zeta = 1   # Stokes drag coefficient
+inv_kBT = 1.0 / (kB * T)
 inv_zeta = 1.0 / zeta
 k = 1      # Harmonic potential spring constant
 x0 = np.array([2, -2])  # Equilibrium oscillator positions
-xi = np.array([0, 0])  # Initial oscillator positions
-states = np.array([1, -1], dtype='int32')  # Kinetic states per oscillator
+xi = np.array([0, 0])  # Initial positions
+init_state = np.array([1, 1], dtype='int32')  # Initial kinetic states (currently only support for 1 or -1)
 sim_dir = f"{a:.3g}"  # Master directory for all data
 
 # Bools

@@ -125,7 +125,7 @@ def compute_switch_probability(diff):
 
 def attempt_switch(i, rand, prob, state):
     # Attempts to switch the kinetic state of two oscillators
-    # 
+    # NOTE: BETTER WAY OF IMPLEMENTING
     # rand, prob and state are 2-element numpy arrays.
 
     if rand[0] < prob[0]:
@@ -134,6 +134,32 @@ def attempt_switch(i, rand, prob, state):
         state[1] *= -1
 
     return state[:]
+
+def attempt_state_transition(state, energy_diff, rand):
+    # Attempt to transition between kinetic states.
+    prob = np.zeros(Params.npart)
+    
+    # Loop over oscillators
+    for i in range(Params.npart):
+        # NOTE: The following two exponentials produce the same
+        # results as if the transition probability of EITHER
+        # state was exp(|dU| / kBT). The only difference is
+        # that this method create probabilities greater
+        # than 1.
+        if state[i] == 1:
+            prob[i] = np.exp(-energy_diff[i] * Params.inv_kBT)
+        elif state[i] == -1:
+            prob[i] = np.exp(energy_diff[i] * Params.inv_kBT)
+        else:
+            print("ERROR - State unassigned during transition")
+            print("Exiting")
+            quit()
+            
+        # Flip the sign of the state integer
+        if rand[i] < prob[i], 1:
+            state[i] = -state[i]
+            
+    return prob[:], state[:]
 
 def variable_coupling_strength(a, pos1, pos2):
     # Where pos1 and pos2 are from different oscillators
@@ -241,15 +267,18 @@ else:
 # Kinetics
 p = np.zeros((Params.npart, Params.nsteps))  # State switch probability
 if Params.run_switching:
-    d = np.ones(p.shape)  # State integer
+    d = np.ones(p.shape, dtype='int32')  # State integer
+    d[:, 0] = Params.init_state[:]
 else:
-    d = np.zeros(p.shape)
+    d = np.zeros(p.shape, dtype='int32')
 ddot = np.zeros(Params.nsteps)  # Product of oscillator states, d1.d2 (or S1.S2) for 2 oscillators
+ddot[0] = d[0, 0] * d[1, 0]
 
 # More array initialisation
 pos = np.zeros(p.shape)
 pos[:, 0] = Params.xi[:]
 disp = np.zeros(p.shape)
+disp[:, 0] = pos[:, 0] - Params.x0[:]
 energy = np.zeros(p.shape)
 acf_disp = np.zeros(Params.nsteps)
 acf_d = np.zeros(Params.nsteps)
@@ -281,15 +310,14 @@ for rep in range(Params.nreps):
         # Kinetic state, dU = U2 = U1 = 2kX
         # If 2kX is always positive, this corresponds to a transition being
         # most likely to occur when the difference in energy between the 
-        # states is zero. Sounds sensible!
+        # states is zero.
         #
         # P = exp(0) = 1    >> Oscillator is at eqbm position
         # P = exp(-10) ~ 0  >> Oscillator is far from eqbm
-        disp[:, step-1] = pos[:, step-1] - Params.x0[:]
-        dU = 2 * Params.k * np.abs(disp[:, step-1])
-        p[:, step-1] = np.exp(-dU / (Params.kB * Params.T))
-        d[:, step-1] = attempt_switch(step-1, rand[rep, :, step-1], p[:, step-1], d[:, step-1])
-        ddot[step-1] = d[0, step-1] * d[1, step-1]
+        
+        # dU = 2 * Params.k * np.abs(disp[:, step-1])
+        # p[:, step-1] = np.exp(-dU / (Params.kB * Params.T))
+        # d[:, step-1] = attempt_switch(step-1, rand[rep, :, step-1], p[:, step-1], d[:, step-1])
 
         # ODE terms (Euler scheme)
         # NOTE: can probably reduce the number of matmuls
@@ -299,6 +327,11 @@ for rep in range(Params.nreps):
 
         # Position update
         pos[:, step] = pos[:, step-1] + Params.inv_zeta * (spring_term[:] + switch_term[:] + brownian_term[:])
+        disp[:, step] = pos[:, step] - Params.x0[:]
+        
+        # Kinetics update
+        p[:, step], d[:, step] = attempt_state_transition(d[:, step-1], 2 * Params.k * disp[:, step], rand[rep, :, step])
+        ddot[step] = d[0, step] * d[1, step]
 
     # Record data
     energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
