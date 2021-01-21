@@ -3,7 +3,7 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nreps = 2   # Number of repeats per simulation
+nreps = 1000   # Number of repeats per simulation
 dt = 0.01      # Timestep
 nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
@@ -13,8 +13,9 @@ a = 0      # HD coupling strength, 0 <= a < 1
 zeta = 1   # Stokes drag coefficient
 inv_zeta = 1.0 / zeta
 k = 1      # Harmonic potential spring constant
-x0 = np.array([5, -5])  # Equilibrium oscillator positions
+x0 = np.array([2, -2])  # Equilibrium oscillator positions
 xi = np.array([0, 0])  # Initial oscillator positions
+states = np.array([1, -1], dtype='int32')  # Kinetic states per oscillator
 sim_dir = f"{a:.3g}"  # Master directory for all data
 
 # Bools
@@ -24,8 +25,8 @@ if run_brownian:
     draw_gaussian = True
 else:
     draw_gaussian = False
-show_figs = False  # Display figures as they are plotted
-plot_all = False  # Plot figures for every repeat (expensive)
+show_figs = False  # Display figures as they are plotted (not recommended for many repeats)
+plot_all = False  # Plot figures for every repeat (not recommended for many repeats)
 
 # Error checks
 if a < 0 or a >= 1:
