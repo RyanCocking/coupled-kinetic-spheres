@@ -81,8 +81,6 @@ def plot_disp2(path, disp):
     plt.plot(Params.steps, np.square(disp[0, :]), label="Oscillator 1")
     plt.plot(Params.steps, np.square(disp[1, :]), label="Oscillator 2")
     plt.plot(Params.steps, np.mean(np.square(disp[:, :]))*np.ones(Params.nsteps), 'r--', label="np.mean(disp$^2$[:, :])")
-    if Params.run_brownian:
-        plt.plot(Params.steps, (1.0/Params.k)*np.ones(Params.nsteps), 'k--', label="$<(x-x_0)^2>=1/k=${0:.2f}".format(1.0/Params.k))
     plt.xlabel("Steps")
     plt.ylabel("Displacement$^2$")
     plt.legend()
@@ -143,16 +141,28 @@ def plot_p(path, p, disp):
         plt.show()
     plt.close()
 
-def plot_d(path, d):
+def plot_d(path, d, ddot):
     # Kinetic state integer, d = +-1
-    plt.plot(Params.steps, d[0, :], label="Oscillator 1")
-    plt.plot(Params.steps, d[1, :], label="Oscillator 2")
+    plt.plot(Params.steps, d[0, :], 'bo', ms=0.5, label="Oscillator 1")
+    plt.plot(Params.steps, d[1, :], 'ro', ms=0.5, label="Oscillator 2")
     mean = np.mean(d[:, :])*np.ones(Params.nsteps)
-    plt.plot(Params.steps, mean[:], 'r--', label="np.mean(d[:, :]) = {0:.1g}".format(mean[0]))
+    plt.plot(Params.steps, mean[:], 'k--', label="np.mean(d[:, :]) = {0:.1g}".format(mean[0]))
     plt.xlabel("Steps")
     plt.ylabel("State integer")
     plt.legend()
     save_figure(path, "StateInt_Time.png")
+    if Params.show_figs:
+        plt.show()
+    plt.close()
+    
+    # Product of state integer between two oscillators, d1.d2
+    plt.plot(Params.steps, ddot[:], 'ko', ms=0.5, label="Product")
+    mean = np.mean(ddot[:])*np.ones(Params.nsteps)
+    plt.plot(Params.steps, mean[:], 'r--', label="$<d_1 \cdot d_2> = {0:.2g}$".format(mean[0]))
+    plt.xlabel("Steps")
+    plt.ylabel("$d_1 \cdot d_2$")
+    plt.legend()
+    save_figure(path, "StateIntProduct_Time.png")
     if Params.show_figs:
         plt.show()
     plt.close()
@@ -266,14 +276,14 @@ def plot_core(path, pos, disp, energy, acf_disp):
     # Core figures, relevant for every simulation
     plot_pos(path, pos)
     plot_disp(path, disp)
-    plot_disp2(path, disp)
+    # plot_disp2(path, disp)
     plot_energy(path, energy)
     plot_acf_disp(path, acf_disp)
 
-def plot_switching(path, p, disp, d, switches, switch_sum, acf_d):
+def plot_switching(path, p, disp, d, ddot, switches, switch_sum, acf_d):
     # Kinetic switching figures
     plot_p(path, p, disp)
-    plot_d(path, d)
+    plot_d(path, d, ddot)
     plot_switches(path, disp, switches, switch_sum)
     plot_acf_d(path, acf_d)
 
@@ -290,7 +300,7 @@ def plot_all():
 
     print("Plotting all figures...")
     for sim in range(Params.nreps):
-        print("Simulation {0} / {1}".format(sim + 1, Params.nreps), end='\r')
+        print("Repeat {0} / {1}".format(sim + 1, Params.nreps), end='\r')
 
         # Load simulation data
         sub_dir = f"{Params.sim_dir:s}/{sim + 1:d}"
@@ -307,6 +317,7 @@ def plot_all():
         if Params.run_switching:
             p = load_array(sub_dir, "prob.txt")
             d = load_array(sub_dir, "stateint.txt")
+            ddot = load_array(sub_dir, "stateintproduct.txt")
             switches = load_array(sub_dir, "switches.txt")
             switch_sum = load_array(sub_dir, "switchcumsum.txt")
             acf_d = load_array(sub_dir, "autocorrstate.txt")
@@ -316,6 +327,6 @@ def plot_all():
         if Params.run_brownian:
             plot_brownian(sub_dir, dW)
         if Params.run_switching:
-            plot_switching(sub_dir, p, disp, d, switches, switch_sum, acf_d)
+            plot_switching(sub_dir, p, disp, d, ddot, switches, switch_sum, acf_d)
 
     print("\nDone")

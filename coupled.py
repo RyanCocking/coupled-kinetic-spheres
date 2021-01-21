@@ -270,7 +270,7 @@ print("Running...")
 
 for rep in range(Params.nreps):
     
-    print("Simulation {0} / {1}".format(rep + 1, Params.nreps), end='\r')
+    print("Repeat {0} / {1}".format(rep + 1, Params.nreps), end='\r')
     
     rep_dir = f"{Params.sim_dir:s}/{rep + 1:d}"
     make_dir(rep_dir)
