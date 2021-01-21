@@ -123,29 +123,30 @@ def compute_switch_probability(diff):
     # diff = U1 - U0   (difference between state potentials)
     return np.exp(-diff / (Params.kB * Params.T))
 
-def attempt_switch(i, rand, prob, state):
-    # Attempts to switch the kinetic state of two oscillators
-    # NOTE: BETTER WAY OF IMPLEMENTING
-    # rand, prob and state are 2-element numpy arrays.
-
-    if rand[0] < prob[0]:
-        state[0] *= -1
-    if rand[1] < prob[1]:
-        state[1] *= -1
-
-    return state[:]
+def attempt_kinetic_switch(state, energy_diff, rand):
+    """Alternate version of function below. Probabilities
+    are capped at 1 due to dU always being positive.""""
+    prob = np.zeros(Params.npart)
+    energy_diff = np.abs(energy_diff[:])
+    
+    # Loop over oscillators
+    for i in range(Params.npart):
+        prob[i] = np.exp(energy_diff[i] * Params.inv_kBT)
+            
+        # Flip the sign of the state integer
+        if rand[i] < prob[i]:
+            state[i] = -state[i]
+            
+    return prob[:], state[:]
 
 def attempt_state_transition(state, energy_diff, rand):
-    # Attempt to transition between kinetic states.
+    """Attempt to transition between kinetic states. The
+    energy difference may be either positive or negative, 
+    so probabilities can go beyond 1."""
     prob = np.zeros(Params.npart)
     
     # Loop over oscillators
     for i in range(Params.npart):
-        # NOTE: The following two exponentials produce the same
-        # results as if the transition probability of EITHER
-        # state was exp(|dU| / kBT). The only difference is
-        # that this method create probabilities greater
-        # than 1.
         if state[i] == 1:
             prob[i] = np.exp(-energy_diff[i] * Params.inv_kBT)
         elif state[i] == -1:
@@ -156,7 +157,7 @@ def attempt_state_transition(state, energy_diff, rand):
             quit()
             
         # Flip the sign of the state integer
-        if rand[i] < prob[i], 1:
+        if rand[i] < prob[i]:
             state[i] = -state[i]
             
     return prob[:], state[:]
