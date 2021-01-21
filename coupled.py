@@ -87,11 +87,11 @@ def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10)
     if enable_print:
         print(f"Saved {file_name:s} to directory '{path:s}'")
         
-def compute_mean_array(path="default", file_name="sample.txt", num_sims=1, enable_print=False):
+def compute_mean_array(path="default", file_name="sample.txt", num_reps=1, enable_print=False):
     # Return the mean average taken over repeats.
     arrays = []
-    for sim in range(num_sims):
-        array = load_array(f"{path:s}/{sim + 1:d}", file_name, enable_print)
+    for rep in range(num_reps):
+        array = load_array(f"{path:s}/{rep + 1:d}", file_name, enable_print)
         arrays.append(array)
         
     return np.mean(np.array(arrays), axis=0)
@@ -268,12 +268,12 @@ print_matrix("2*kB*T*zeta*C", check_N(C)[1])
 # ============================================================================#
 print("Running...")
 
-for sim in range(Params.nreps):
+for rep in range(Params.nreps):
     
-    print("Simulation {0} / {1}".format(sim + 1, Params.nreps), end='\r')
+    print("Simulation {0} / {1}".format(rep + 1, Params.nreps), end='\r')
     
-    sub_dir = f"{Params.sim_dir:s}/{sim + 1:d}"
-    make_dir(sub_dir)
+    rep_dir = f"{Params.sim_dir:s}/{rep + 1:d}"
+    make_dir(rep_dir)
 
     for step in Params.steps[1:]:
         t = step * Params.dt
@@ -288,13 +288,13 @@ for sim in range(Params.nreps):
         disp[:, step-1] = pos[:, step-1] - Params.x0[:]
         dU = 2 * Params.k * np.abs(disp[:, step-1])
         p[:, step-1] = np.exp(-dU / (Params.kB * Params.T))
-        d[:, step-1] = attempt_switch(step-1, rand[sim, :, step-1], p[:, step-1], d[:, step-1])
+        d[:, step-1] = attempt_switch(step-1, rand[rep, :, step-1], p[:, step-1], d[:, step-1])
 
         # ODE terms (Euler scheme)
         # NOTE: can probably reduce the number of matmuls
         spring_term = -Params.k * np.matmul(inv_C, disp[:, step-1]) * Params.dt
         switch_term = Params.k * np.matmul(inv_C, d[:, step-1]) * Params.dt
-        brownian_term = np.matmul(inv_C_N, dW[sim, :, step-1])
+        brownian_term = np.matmul(inv_C_N, dW[rep, :, step-1])
 
         # Position update
         pos[:, step] = pos[:, step-1] + Params.inv_zeta * (spring_term[:] + switch_term[:] + brownian_term[:])
@@ -306,44 +306,48 @@ for sim in range(Params.nreps):
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
 
-    save_array(sub_dir, "position.txt", pos)
-    save_array(sub_dir, "displacement.txt", disp)
-    save_array(sub_dir, "energy.txt", energy)
-    save_array(sub_dir, "autocorrdisp.txt", acf_disp)
+    save_array(rep_dir, "position.txt", pos)
+    save_array(rep_dir, "displacement.txt", disp)
+    save_array(rep_dir, "energy.txt", energy)
+    save_array(rep_dir, "autocorrdisp.txt", acf_disp)
     if Params.run_brownian:
-        save_array(sub_dir, "dW.txt", dW[sim, :, :])
+        save_array(rep_dir, "dW.txt", dW[rep, :, :])
     if Params.run_switching:
-        save_array(sub_dir, "prob.txt", p)
-        save_array(sub_dir, "stateint.txt", d)
-        save_array(sub_dir, "switches.txt", switches)
-        save_array(sub_dir, "switchcumsum.txt", switch_sum)
-        save_array(sub_dir, "autocorrstate.txt", acf_d)
+        save_array(rep_dir, "prob.txt", p)
+        save_array(rep_dir, "stateint.txt", d)
+        save_array(rep_dir, "switches.txt", switches)
+        save_array(rep_dir, "switchcumsum.txt", switch_sum)
+        save_array(rep_dir, "autocorrstate.txt", acf_d)
         
 print("\nDone")
 
+# Plot repeat data
+# NOTE: Rep loop needs moving coupled.py
 if Params.plot_all:
     Plot.plot_all()
 
-# Calculating and plotting quantities averaged over repeats
+# Calculating quantities averaged over repeats
 print(" Calculating and plotting averages over repeat data...")
-mean_pos = compute_mean_array(path=Params.sim_dir, file_name="position.txt", num_sims=Params.nreps)
-mean_disp = compute_mean_array(path=Params.sim_dir, file_name="displacement.txt", num_sims=Params.nreps)
-mean_energy = compute_mean_array(path=Params.sim_dir, file_name="energy.txt", num_sims=Params.nreps)
+mean_pos = compute_mean_array(Params.sim_dir, "position.txt", Params.nreps)
+mean_disp = compute_mean_array(Params.sim_dir, "displacement.txt", Params.nreps)
+mean_energy = compute_mean_array(Params.sim_dir, "energy.txt", Params.nreps)
 acf_disp = compute_acf(np.mean(mean_disp[:, :], axis=0))
-
-save_array(sub_dir, "position.txt", mean_pos)
-save_array(sub_dir, "displacement.txt", mean_disp)
-save_array(sub_dir, "energy.txt", mean_energy)
-save_array(sub_dir, "autocorrdisp.txt", acf_disp)
-
-Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
-
 if Params.run_switching:
-    mean_d = compute_mean_array(path=Params.sim_dir, file_name="stateint.txt", num_sims=Params.nreps)
+    mean_d = compute_mean_array(Params.sim_dir, "stateint.txt", Params.nreps)
     acf_d = compute_acf(np.mean(mean_d[:, :], axis=0))
-    
+
+# Saving
+save_array(Params.sim_dir, "position.txt", mean_pos)
+save_array(Params.sim_dir, "displacement.txt", mean_disp)
+save_array(Params.sim_dir, "energy.txt", mean_energy)
+save_array(Params.sim_dir, "autocorrdisp.txt", acf_disp)
+if Params.run_switching:
     save_array(Params.sim_dir, "stateint.txt", mean_d)
     save_array(Params.sim_dir, "autocorrstate.txt", acf_d)
+
+# PLotting
+Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
+if Params.run_switching:
     Plot.plot_acf_d(Params.sim_dir, acf_d)
-    
+
 print("Done")
