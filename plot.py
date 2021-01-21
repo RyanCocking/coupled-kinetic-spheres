@@ -15,7 +15,7 @@ def save_figure(folder = ".", fig_name = "Figure.png", enable_print=False):
     # Save a figure to a folder and print confirmation to stdout.
     # Include the file extension in fig_name!
     plt.tight_layout()
-    plt.savefig(f"{folder:s}/{fig_name:s}")
+    plt.savefig(f"{folder:s}/{fig_name:s}", dpi=300)
     if enable_print:
         print(f"Saved {fig_name:s} to directory '{folder:s}'")
 
@@ -99,6 +99,7 @@ def plot_acf_disp(path, acf_disp):
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
     plt.xlabel("Lag")
     plt.ylabel("Displacement autocorrelation")
+    plt.ylim(-0.2, 1)
     plt.xscale('log')
     save_figure(path, "AutocorrDisp_Lag.png")
     if Params.show_figs:
@@ -139,6 +140,7 @@ def plot_d(path, d, ddot):
     plt.plot(Params.steps, mean[:], 'k--', label="np.mean(d[:, :]) = {0:.2g}".format(mean[0]))
     plt.xlabel("Steps")
     plt.ylabel("State integer")
+    plt.ylim(-1, 1)
     plt.legend()
     save_figure(path, "StateInt_Time.png")
     if Params.show_figs:
@@ -151,6 +153,7 @@ def plot_d(path, d, ddot):
     plt.plot(Params.steps, mean[:], 'r--', label="$<d_1 \cdot d_2> = {0:.2g}$".format(mean[0]))
     plt.xlabel("Steps")
     plt.ylabel("$d_1 \cdot d_2$")
+    plt.ylim(-1, 1)
     plt.legend()
     save_figure(path, "StateIntProduct_Time.png")
     if Params.show_figs:
@@ -200,33 +203,39 @@ def plot_acf_d(path, acf_d):
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
     plt.xlabel("Lag")
     plt.ylabel("State integer autocorrelation")
+    plt.ylim(-0.2, 1)
     plt.xscale('log')
     save_figure(path, "AutocorrStateInt_Lag.png")
     if Params.show_figs:
         plt.show()
     plt.close()
     
-def plot_acf_multisim(path, acf_list, plot_labels, y_label="Autocorrelation"):
-    # Autocorrelation from multiple simulations (a parameter search)
-    if len(acf_list[:]) < 1 or len(plot_labels[:]) < 1:
+def plot_multisim(path, data_list, plot_labels, x_label="Lag", y_label="Autocorrelation", ylim=[-0.2, 1], xlog=True, save="AutocorrState_Lag", use_marker=False):
+    # Plot from multiple simulations (a parameter search)
+    if len(data_list[:]) < 1 or len(plot_labels[:]) < 1:
         print("ERROR - Lists are empty")
         print("Exiting")
         quit()
-    elif len(acf_list[:]) != len(plot_labels[:]):
+    elif len(data_list[:]) != len(plot_labels[:]):
         print("ERROR - Mismatch in list lengths")
         print("Exiting")
         quit() 
     
-    for i, acf in enumerate(acf_list[:]):
-        plt.plot(Params.steps, acf, label=plot_labels[i])
+    for i, acf in enumerate(data_list[:]):
+        if use_marker:
+            plt.plot(Params.steps, acf, 'o', ms=0.5, label=plot_labels[i])
+        else:
+            plt.plot(Params.steps, acf, label=plot_labels[i])
     plt.plot(Params.steps, np.zeros(Params.nsteps), 'k--', lw=0.5)
     
-    plt.xlabel("Lag")
-    plt.ylabel(f"{y_label:s}")
-    plt.xscale('log')
-    if len(acf_list[:]) > 1:
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.ylim(ylim[0], ylim[1])
+    if xlog:
+        plt.xscale('log')
+    if len(data_list[:]) > 1:
         plt.legend()
-    save_figure(path, "AutocorrState_Lag.png")
+    save_figure(path, f"{save:s}.png")
     if Params.show_figs:
         plt.show()
     plt.close()

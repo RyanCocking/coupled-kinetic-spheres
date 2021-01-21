@@ -31,35 +31,55 @@ if Params.a != couplings[0]:
     print("Exiting")
     quit()
     
-save_dir = "results"
-make_dir(save_dir, False, True)
+# Params
+search_dir = "results"
+run = False
 
-plot_data = []
+if run:
+    make_dir(search_dir, False, True)
+    shutil.copyfile("params.py", "params.py.copy")
+    
+acf_d = []
+acf_disp = []
+ddot = []
 plot_labels = []
 old_a = couplings[0]
-shutil.copyfile("params.py", "params.py.copy")
 for i, a in enumerate(couplings):
     print(f"# ========== Hydrodynamic coupling, a = {a:.3g} ========== #")
     
-    # Edit coupling parameter in params.py
-    replace("params.py", f"a = {old_a:.3g}", f"a = {a:.3g}")
-
-    # Run simulation
-    os.system("python coupled.py True")
+    # Edit coupling parameter in params.py and run simulation
+    if run:
+        save_dir = f"{a:.3g}"
+        replace("params.py", f"a = {old_a:.3g}", f"a = {a:.3g}")
+        os.system("python coupled.py True")
+    else:
+        save_dir = f"{search_dir:s}/{a:.3g}"
     
-    # Load data
-    data = load_array(f"{a:.3g}", "autocorrstate.txt", True)
-    plot_data.append(data)
+    # Load data for plotting
+    data = load_array(save_dir, "autocorrstate.txt", True)
+    acf_d.append(data)
+    data = load_array(save_dir, "autocorrdisp.txt", True)
+    acf_disp.append(data)
+    data = load_array(save_dir, "stateintproduct.txt", True)
+    ddot.append(data)
     plot_labels.append(f"a = {a:.3g}")
     
-    shutil.move(f"{a:.3g}", f"{save_dir:s}/")
+    if run:
+        shutil.move(f"{a:.3g}", f"{search_dir:s}/")
     old_a = a
 
 # Plot mean data from each sim onto a single graph
-Plot.plot_acf_multisim(".", plot_data[:], plot_labels[:], "State integer autocorrelation")
+Plot.plot_multisim(".", acf_d[:], plot_labels[:], y_label="State integer autocorrelation")
+Plot.plot_multisim(".", acf_disp[:], plot_labels[:], y_label="Displacement autocorrelation", save="AutocorrDisp_Lag")
+Plot.plot_multisim(".", ddot[:], plot_labels[:], x_label="Time", y_label="$d_1 \cdot d_2$", ylim=[-1, 1], xlog=False, save="StateIntProduct_Time", use_marker=True)
 images = glob.glob("*.png")
 for im in images:
-    shutil.move(f"{im:s}", f"{save_dir:s}/")
+    try:
+        shutil.move(f"{im:s}", f"{search_dir:s}/")
+    except:
+        os.remove(f"{search_dir:s}/{im:s}")
+        shutil.move(f"{im:s}", f"{search_dir:s}/")
 
 # Reset params.py
-shutil.copyfile("params.py.copy", "params.py")
+if run:
+    shutil.copyfile("params.py.copy", "params.py")
