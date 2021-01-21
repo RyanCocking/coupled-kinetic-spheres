@@ -349,9 +349,10 @@ if Params.run_switching:
     save_array(Params.sim_dir, "stateintproduct.txt", mean_ddot)
     save_array(Params.sim_dir, "autocorrstate.txt", acf_d)
 
-# PLotting
+# Plotting
 Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
 if Params.run_switching:
+    Plot.plot_d(Params.sim_dir, mean_d, mean_ddot)
     Plot.plot_acf_d(Params.sim_dir, acf_d)
 
 print("Done")
