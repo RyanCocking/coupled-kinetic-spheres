@@ -89,6 +89,7 @@ def save_array(path="default/default", file_name="sample.txt", data=np.zeros(10)
         
 def compute_mean_array(path="default", file_name="sample.txt", num_reps=1, enable_print=False):
     # Return the mean average taken over repeats.
+    # The output array is the same shape as the constituent repeat arrays
     arrays = []
     for rep in range(num_reps):
         array = load_array(f"{path:s}/{rep + 1:d}", file_name, enable_print)
@@ -217,22 +218,20 @@ make_dir(Params.sim_dir, run_param_search)
 shutil.copyfile("params.py", f"{Params.sim_dir:s}/params.py.copy")
 
 # Matrices
-C = C_matrix(Params.a)
+C = C_matrix(Params.a)  # Viscosity matrix
 inv_C = np.linalg.inv(C)
-N = N_matrix(Params.a)
+N = N_matrix(Params.a)  # Coupled Brownian matrix
 inv_C_N = np.matmul(inv_C, N)
 
 # Random numbers
-rng = np.random.default_rng()
-rand = rng.uniform(size=(Params.nreps, Params.npart, Params.nsteps))
+rng = np.random.default_rng()  # Generator object
+rand = rng.uniform(size=(Params.nreps, Params.npart, Params.nsteps))  # Dice roll for transitions
 if Params.run_brownian:
     if Params.draw_gaussian:
-        # Gaussian random number [0,1]
         R = np.random.normal(loc=0.0, size=rand.shape)
-        dW = np.sqrt(Params.dt) * R
+        dW = np.sqrt(Params.dt) * R  # Weiner process vector
     else:
-        # Uniform random number [-1,1]
-        # Might need normalising? Results in mean energies that are half what
+        # BUG: Might need normalising. Results in mean energies that are half what
         # they should be from Brownian motion
         R = np.random.uniform(low=-1.0, high=1.0, size=rand.shape)
         dW = np.sqrt(3.0*Params.dt/2.0) * R
@@ -240,11 +239,12 @@ else:
     dW = np.zeros(rand.shape)
     
 # Kinetics
-p = np.zeros((Params.npart, Params.nsteps))
+p = np.zeros((Params.npart, Params.nsteps))  # State switch probability
 if Params.run_switching:
-    d = np.ones(p.shape)
+    d = np.ones(p.shape)  # State integer
 else:
     d = np.zeros(p.shape)
+ddot = np.zeros(Params.nsteps)  # Product of oscillator states, d1.d2 (or S1.S2) for 2 oscillators
 
 # More array initialisation
 pos = np.zeros(p.shape)
@@ -289,6 +289,7 @@ for rep in range(Params.nreps):
         dU = 2 * Params.k * np.abs(disp[:, step-1])
         p[:, step-1] = np.exp(-dU / (Params.kB * Params.T))
         d[:, step-1] = attempt_switch(step-1, rand[rep, :, step-1], p[:, step-1], d[:, step-1])
+        ddot[step-1] = d[0, step-1] * d[1, step-1]
 
         # ODE terms (Euler scheme)
         # NOTE: can probably reduce the number of matmuls
@@ -315,6 +316,7 @@ for rep in range(Params.nreps):
     if Params.run_switching:
         save_array(rep_dir, "prob.txt", p)
         save_array(rep_dir, "stateint.txt", d)
+        save_array(rep_dir, "stateintproduct.txt", ddot)
         save_array(rep_dir, "switches.txt", switches)
         save_array(rep_dir, "switchcumsum.txt", switch_sum)
         save_array(rep_dir, "autocorrstate.txt", acf_d)
@@ -334,6 +336,7 @@ mean_energy = compute_mean_array(Params.sim_dir, "energy.txt", Params.nreps)
 acf_disp = compute_acf(np.mean(mean_disp[:, :], axis=0))
 if Params.run_switching:
     mean_d = compute_mean_array(Params.sim_dir, "stateint.txt", Params.nreps)
+    mean_ddot = compute_mean_array(Params.sim_dir, "stateintproduct.txt", Params.nreps)
     acf_d = compute_acf(np.mean(mean_d[:, :], axis=0))
 
 # Saving
@@ -343,6 +346,7 @@ save_array(Params.sim_dir, "energy.txt", mean_energy)
 save_array(Params.sim_dir, "autocorrdisp.txt", acf_disp)
 if Params.run_switching:
     save_array(Params.sim_dir, "stateint.txt", mean_d)
+    save_array(Params.sim_dir, "stateintproduct.txt", mean_ddot)
     save_array(Params.sim_dir, "autocorrstate.txt", acf_d)
 
 # PLotting
