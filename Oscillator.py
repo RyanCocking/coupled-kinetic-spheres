@@ -6,7 +6,7 @@ class Oscillator:
     harmonic potential. Experiences kinetic switching between four states.
     """
     
-    def __init__(self, id=0, position=0.0, origin=0.0, state="A", all_states=["A, B, C, D"]):
+    def __init__(self, id=0, position=0.0, origin=0.0, state="A", all_states=["A", "B", "C", "D"]):
         """
         potential
         """
@@ -14,12 +14,14 @@ class Oscillator:
         self.position = position
         self.displacement = self.position - origin
         self.state = state
-        self.adjacent_states = get_adjacent_states(all_states)
+        self.adjacent_states = self.get_adjacent_states(all_states)
     
-    def get_adjacent_states(all_states):
+    def get_adjacent_states(self, all_states):
         """
-        Input:  1D list of state names
-        Return: 2D list of adjacent states
+        Return the nearest neighbours of the current state
+        
+        Input:  1D list of all state names
+        Return: 2-element list of adjacent states
         
         Assuming each state only has two neighbours and the kinetic network
         is a cycle, i.e.:
@@ -28,19 +30,27 @@ class Oscillator:
         |     |
         A-----D
         
-        generate neighbours for each state so the function will return:
+        generate a 2-element list of the neighbours of the current state, going 
+        clockwise around the network.
         
-        [["D", "B"], ["A", "C"], ["B", "D"], ["C", "A"]]
+        e.g. state "A" will return ["D", "B"] and state "C" will return
+        ["B", "D"], etc.
         """
-
-        for state in all_states[1:-1]
-            adjacent_states = [ [state[i-1], state[i+1]] ]
-        adjacent_states[0]  = [state[-1], state[1]]
-        adjacent_states[-1] = [state[0], state[-2]]
+        # List index of current state
+        i = all_states.index(self.state)
         
-        return adjacent_states[:, :]
+        # Neighbour indices
+        right = i + 1
+        left = i - 1
+        
+        if right >= len(all_states):
+            right = 0
+        if left < 0:
+            left = -1
+        
+        return [all_states[left], all_states[right]]
     
-    def state():
+    def state_information():
         """
         dictionary with lambda expressions of switch probability?
         each state needs information on its potential, adjacent states, the
