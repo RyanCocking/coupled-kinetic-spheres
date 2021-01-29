@@ -1,4 +1,5 @@
-import numpy
+import numpy as np
+import params as Params
 
 class Oscillator:
     """
@@ -6,16 +7,21 @@ class Oscillator:
     harmonic potential. Experiences kinetic switching between four states.
     """
     
-    def __init__(self, id=0, position=0.0, origin=0.0, state="A", all_states=["A", "B", "C", "D"]):
+    def __init__(self, id = 0, position = 0.0, origin = 0.0, state = "1A"):
         """
         potential
         """
+        # Defined by input
         self.id = id
         self.position = position
         self.displacement = self.position - origin
         self.state = state
-        self.adjacent_states = self.get_adjacent_states(all_states)
-    
+        
+        # Obtained from input
+        self.adjacent_states = self.get_adjacent_states(Params.all_states)
+        self.transition_rates = self.get_rates(Params.rate_AB, Params.rate_12)
+
+
     def get_adjacent_states(self, all_states):
         """
         Return the nearest neighbours of the current state
@@ -25,16 +31,18 @@ class Oscillator:
         
         Assuming each state only has two neighbours and the kinetic network
         is a cycle, i.e.:
-        
-        B-----C
-        |     |
-        A-----D
-        
+                    
+                1B ------ 2A
+                |          |
+                |          |  
+                |          |
+                1A ------ 2B
+                    
         generate a 2-element list of the neighbours of the current state, going 
         clockwise around the network.
         
-        e.g. state "A" will return ["D", "B"] and state "C" will return
-        ["B", "D"], etc.
+        e.g. state "1A" will return ["2B", "1B"] and state "2A" will return
+        ["1B", "2B"], etc.
         """
         # List index of current state
         i = all_states.index(self.state)
@@ -49,6 +57,63 @@ class Oscillator:
             left = -1
         
         return [all_states[left], all_states[right]]
+    
+    
+    def get_rates(self, rate_AB, rate_12):
+        """
+        For each adjacent state, return a corresponding transition rate.
+        
+        Looping over adjacent states:
+        
+        Create a string of the form iXjY, where i and j are integers, and X and
+        Y are characters, e.g. "1A2B", determine the rate constant of the
+        transition between state 1A and state 2B.
+        
+        A and B denote primed or unprimed states with the same equilibrium
+        positions. 1 and 2 denote states with different equilibrium positions
+        (taking priority over A and B). Hence, mechanical energy affects
+        transitions between states 1A to 2B, rather than states 1A to 1B.
+        
+        Assumes a 'symmetric' kinetic system, i.e. r12 = r21 and r1AB = r2AB.
+            
+                    r12
+                1B ------ 2A
+                |          |
+          r1AB  |          |  r2AB
+                |          |
+                1A ------ 2B
+                    r21
+            
+                x1        x2
+        
+        """
+        
+        rates = []
+        for adj in self.adjacent_states:
+            
+            # Concatenate the names of the current state and an adjacent state
+            switch_string = self.state + adj
+            assert(len(switch_string) == 4)
+            
+            # Compare i and j between states
+            # NOTE: Need a way to select rates from a list for better customisation
+            #       of the simulation
+            if switch_string[0] == switch_string[2]:
+                # Eqbm positions are equal between states
+                rates.append(rate_AB)
+            else:
+                # Eqbm positions are different
+                rates.append(rate_12)
+            
+        return rates
+    
+    
+    def compute_probability(self, rate):
+        """
+        Probability of transition between two states
+        """
+        dU = 2 * Params.k * self.displacement
+        return rate * np.exp(dU * Params.inv_kBT)
     
     def state_information():
         """
@@ -79,7 +144,21 @@ class Oscillator:
     
     def attempt_transition():
         """
-        attempt switch state. what states you can switch to will depend
-        on the current state.
+        attempt to switch from the current state to a neighbouring state
+        """
+        pass
+    
+    def get_most_likely_state():
+        """
+        from all the neighbouring states, find out which is the most
+        likely one to transition to
+        """
+        pass
+        
+    
+    def update_state():
+        """
+        Having recently transitioned, update the relevant state data such as
+        neighbours, potential, probabilities, etc...
         """
         pass
