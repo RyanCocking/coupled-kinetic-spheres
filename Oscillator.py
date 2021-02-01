@@ -5,6 +5,9 @@ class Oscillator:
     """
     A 1D spherical particle. Oscillates due to Brownian motion and a
     harmonic potential. Experiences kinetic switching between four states.
+    
+    Should contain information about the equation of motion, position, 
+    displacement, current state, neighbouring oscillators
     """
     
     def __init__(self, id = 0, position = 0.0, origin = 0.0, state = "1A"):
@@ -20,7 +23,6 @@ class Oscillator:
         # Obtained from input
         self.adjacent_states = self.get_adjacent_states(Params.all_states)
         self.transition_rates = self.get_rates(Params.rate_AB, Params.rate_12)
-
 
     def get_adjacent_states(self, all_states):
         """
@@ -142,23 +144,46 @@ class Oscillator:
         """
         pass
     
-    def attempt_transition():
-        """
-        attempt to switch from the current state to a neighbouring state
-        """
+    def update_all_states():
         pass
     
-    def get_most_likely_state():
+    class State:
         """
-        from all the neighbouring states, find out which is the most
-        likely one to transition to
+        A single state of an oscillator
         """
-        pass
         
-    
-    def update_state():
-        """
-        Having recently transitioned, update the relevant state data such as
-        neighbours, potential, probabilities, etc...
-        """
-        pass
+        def __init__(self):
+            
+            self.name = name  # 1A
+            self.origin = origin  # centre of potential well; displacement shift relative to oscillator eqbm position
+            self.potential = potential
+            self.adjacent_states = adjacent_states  # neighbouring states (NOT oscillators)
+            self.rates = rates  # rates of transition to neighbours
+            self.probabilities = probabilities  # probabilities calculated from rates
+            self.counter = counter  # Amount of time spent in current state (resets when a transition occurs)
+            
+        def compute_transition_probability():
+            """
+            probability = rate * mechanical_time_step
+            """
+            pass
+        
+        def get_most_likely_state():
+            """
+            from all the neighbouring states, find out which is the most
+            likely one to transition to
+            """
+            pass
+            
+        def attempt_transition():
+            """
+            Attempt to transition from the current state to a neighbouring state
+            """
+            pass
+        
+        def update():
+             """
+            Having recently transitioned, update the relevant state data such as
+            neighbours, potential, probabilities, etc...
+            """
+            pass
