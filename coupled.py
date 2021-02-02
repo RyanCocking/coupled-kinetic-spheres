@@ -80,37 +80,25 @@ def compute_switch_probability(diff):
     # diff = U1 - U0   (difference between state potentials)
     return np.exp(-diff / (Params.kB * Params.T))
 
-def attempt_kinetic_switch(state, energy_diff, rand):
-    """Alternate version of function below. Probabilities
-    are capped at 1 due to dU always being positive. Precludes
-    the use of rate constants."""
-    prob = np.zeros(Params.npart)
-    energy_diff = np.abs(energy_diff[:])
+def attempt_state_transition(state, rand):
+    """
+    Attempt to transition between kinetic states.
     
-    # Loop over oscillators
-    for i in range(Params.npart):
-        prob[i] = np.exp(energy_diff[i] * Params.inv_kBT)
-            
-        # Flip the sign of the state integer
-        if rand[i] < prob[i]:
-            state[i] = -state[i]
-            
-    return prob[:], state[:]
-
-def attempt_state_transition(state, energy_diff, rand):
-    """Attempt to transition between kinetic states. The
-    energy difference may be either positive or negative, 
-    so probabilities can go beyond 1."""
+    P12 = r12 * dt < 1
+    
+    For now, r12 is constant. Recalculating r12 requires
+    mechanical energy difference dU.
+    """
     prob = np.zeros(Params.npart)
     
     # Loop over oscillators
     for i in range(Params.npart):
         if state[i] == -1:
-            # A to B (-1 to 1)
-            prob[i] = Params.rates[0] * np.exp(energy_diff[i] * Params.inv_kBT)
+            # state 1 to 2 (d=-1 to d=1)
+            prob[i] = Params.rates[0] * Params.dt
         elif state[i] == 1:
-            # B to A (1 to -1)
-            prob[i] = Params.rates[1] * np.exp(-energy_diff[i] * Params.inv_kBT)
+            # state 2 to 1 (d=1 to d=-1)
+            prob[i] = Params.rates[1] * Params.dt
         elif state[i] == 0 and Params.run_switching:
             print("ERROR - State unassigned during transition")
             print("Exiting")
@@ -176,6 +164,49 @@ def compute_acf(x):
     # and return the normalised result
     result = np.correlate(x, x, mode='full')
     return result[result.size // 2:] / np.max(result)
+
+def count_mean_time_in_state(state_integers):
+    """
+    Recover the characteristic time, tau, for each state of an oscillator.  
+    
+    Input:   array of state integers at each time step
+    Returns: list of characteristic times, one per state
+    
+    Counting will ignore the last time step, which makes the function
+    easier to code and won't matter for a large number of time steps.
+    
+    Only works for two-state -1/+1 model.
+    """
+    count = np.zeros(2, dtype='int32')
+    tau = np.zeros(2)
+    counts1 = []
+    counts2 = []
+    
+    # Loop over state integrs
+    for i, d in enumerate(state_integers[:-1]):
+        
+        if d == -1:
+            # state 1 occupied
+            count[0] += 1 
+        elif d == 1:
+            # state 2 occupied
+            count[1] += 1
+            
+        if d != state_integers[i+1]:
+            # if next integer is different (state has changed), record
+            # the count and reset
+            if d == -1:
+                counts1.append(count[0])
+                count[0] = 0
+            elif d == 1:
+                counts2.append(count[1])
+                count[1] = 0
+        
+    # Take mean of consecutive steps to obtain tau
+    tau[0] = np.mean(np.array(counts1)) * Params.dt
+    tau[1] = np.mean(np.array(counts2)) * Params.dt
+    
+    return tau[:]
 
 # ============================================================================#
 # INITIALISATION                                                              #
@@ -245,6 +276,7 @@ disp[:, 0] = pos[:, 0] - Params.x0[:]
 energy = np.zeros(p.shape)
 acf_disp = np.zeros(Params.nsteps)
 acf_d = np.zeros(Params.nsteps)
+count = [0, 0]  # 
 
 print("Done")
 
@@ -270,18 +302,6 @@ for rep in range(Params.nreps):
     for step in Params.steps[1:]:
         t = step * Params.dt
 
-        # Kinetic state, dU = U2 = U1 = 2kX
-        # If 2kX is always positive, this corresponds to a transition being
-        # most likely to occur when the difference in energy between the 
-        # states is zero.
-        #
-        # P = exp(0) = 1    >> Oscillator is at eqbm position
-        # P = exp(-10) ~ 0  >> Oscillator is far from eqbm
-        
-        # dU = 2 * Params.k * np.abs(disp[:, step-1])
-        # p[:, step-1] = np.exp(-dU / (Params.kB * Params.T))
-        # d[:, step-1] = attempt_switch(step-1, rand[rep, :, step-1], p[:, step-1], d[:, step-1])
-
         # ODE terms (Euler scheme)
         # NOTE: can probably reduce the number of matmuls
         spring_term = -Params.k * np.matmul(inv_C, disp[:, step-1]) * Params.dt
@@ -293,15 +313,23 @@ for rep in range(Params.nreps):
         disp[:, step] = pos[:, step] - Params.x0[:]
         
         # Kinetics update
-        p[:, step], d[:, step] = attempt_state_transition(d[:, step-1], 2 * Params.k * disp[:, step], rand[rep, :, step])
+        p[:, step], d[:, step] = attempt_state_transition(d[:, step-1], rand[rep, :, step])
         ddot[step] = d[0, step] * d[1, step]
+        
 
-    # Record data
+    # Calculate and record data
     energy[:, :] = 0.5 * Params.k * np.square(disp[:, :])
     switches, switch_sum = compute_switches(d[:, :])
     acf_disp = compute_acf(np.mean(disp[:, :], axis=0))
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
+        
+    tau1 = count_mean_time_in_state(d[0, :])
+    tau2 = count_mean_time_in_state(d[1, :])
+    
+    print(f"Oscillator 1: tau12 = {tau1[0]:.3g}, tau21 = {tau1[1]:.3g}")
+    print(f"Oscillator 2: tau12 = {tau2[0]:.3g}, tau21 = {tau2[1]:.3g}")
+    print(f"Params: tau12 = {Params.times[0]:.3g}, tau21 = {Params.times[1]:.3g}")
 
     save_array(rep_dir, "position.txt", pos)
     save_array(rep_dir, "displacement.txt", disp)

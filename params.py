@@ -3,9 +3,9 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nreps = 1000   # Number of repeats per simulation
+nreps = 3   # Number of repeats per simulation
 dt = 0.01      # Timestep
-nsteps = int(1e4)  # Number of timesteps
+nsteps = int(1e5)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
 kB = 1     # Boltzmann constant
 T = 1      # Temperature
@@ -17,11 +17,12 @@ k = 1      # Harmonic potential spring constant
 x0 = np.array([2, -2])  # Equilibrium oscillator positions
 xi = np.array([0, 0])  # Initial positions
 init_state = np.array([1, 1], dtype='int32')  # Initial kinetic states (only 1 or -1 supported)
-rates = np.array([1.0, 1.0])  # Transition rates between states, rAB (-1 to 1) and rBA (1 to -1)
+times = np.array([100*dt, 100*dt])  # Characteristic time spent within each state (dt << tau)
+rates = 1.0 / times  # Transition rates between states, r12 (-1 to 1) and r21 (1 to -1), where r12 = 1/tau12
 sim_dir = f"{a:.3g}"  # Master directory for all data
 
 # Bools
-run_switching = False
+run_switching = True
 run_brownian = True
 show_figs = False  # Display figures as they are plotted (not recommended for many repeats)
 plot_all = False  # Plot figures for every repeat (not recommended for many repeats)
