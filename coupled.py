@@ -165,7 +165,7 @@ def compute_acf(x):
     result = np.correlate(x, x, mode='full')
     return result[result.size // 2:] / np.max(result)
 
-def count_mean_time_in_state(state_integers):
+def compute_characteristic_time(state_integers):
     """
     Recover the characteristic time, tau, for each state of an oscillator.  
     
@@ -276,7 +276,7 @@ disp[:, 0] = pos[:, 0] - Params.x0[:]
 energy = np.zeros(p.shape)
 acf_disp = np.zeros(Params.nsteps)
 acf_d = np.zeros(Params.nsteps)
-count = [0, 0]  # 
+tau = np.zeros((Params.npart, Params.init_state.size))
 
 print("Done")
 
@@ -323,13 +323,9 @@ for rep in range(Params.nreps):
     acf_disp = compute_acf(np.mean(disp[:, :], axis=0))
     if Params.run_switching:
         acf_d = compute_acf(np.mean(d[:, :], axis=0))
-        
-    tau1 = count_mean_time_in_state(d[0, :])
-    tau2 = count_mean_time_in_state(d[1, :])
     
-    print(f"Oscillator 1: tau12 = {tau1[0]:.3g}, tau21 = {tau1[1]:.3g}")
-    print(f"Oscillator 2: tau12 = {tau2[0]:.3g}, tau21 = {tau2[1]:.3g}")
-    print(f"Params: tau12 = {Params.times[0]:.3g}, tau21 = {Params.times[1]:.3g}")
+    for i in range(Params.npart):
+        tau[i, :] += compute_characteristic_time(d[i, :])
 
     save_array(rep_dir, "position.txt", pos)
     save_array(rep_dir, "displacement.txt", disp)
@@ -345,6 +341,11 @@ for rep in range(Params.nreps):
         save_array(rep_dir, "switchcumsum.txt", switch_sum)
         save_array(rep_dir, "autocorrstate.txt", acf_d)
         
+# Print recovered characteristic times
+for i in range(Params.npart):
+    tau[i, :] /= Params.nreps
+    print(f"Oscillator {i + 1:d}: tau12 = {tau[i, 0]:.3g}, tau21 = {tau[i, 1]:.3g}")
+    
 print("\nDone")
 
 # Plot repeat data
@@ -374,7 +375,7 @@ if Params.run_switching:
     save_array(Params.sim_dir, "autocorrstate.txt", acf_d)
 
 # Plotting
-Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_energy, acf_disp)
+Plot.plot_core(Params.sim_dir, mean_pos, mean_disp, mean_d, mean_energy, acf_disp)
 if Params.run_switching:
     Plot.plot_d(Params.sim_dir, mean_d, mean_ddot)
     Plot.plot_acf_d(Params.sim_dir, acf_d)

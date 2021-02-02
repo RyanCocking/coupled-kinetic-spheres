@@ -3,9 +3,9 @@ import numpy as np
 # Dimensionless parameters
 # (kB*T = 1 and energies have units of kB*T)
 npart = 2   # Number of oscillators
-nreps = 3   # Number of repeats per simulation
+nreps = 1   # Number of repeats per simulation
 dt = 0.01      # Timestep
-nsteps = int(1e5)  # Number of timesteps
+nsteps = int(1e4)  # Number of timesteps
 steps = np.arange(0, nsteps)  # Simulation steps
 kB = 1     # Boltzmann constant
 T = 1      # Temperature
@@ -17,7 +17,7 @@ k = 1      # Harmonic potential spring constant
 x0 = np.array([2, -2])  # Equilibrium oscillator positions
 xi = np.array([0, 0])  # Initial positions
 init_state = np.array([1, 1], dtype='int32')  # Initial kinetic states (only 1 or -1 supported)
-times = np.array([100*dt, 100*dt])  # Characteristic time spent within each state (dt << tau)
+times = np.array([1000*dt, 100*dt])  # Characteristic time spent within each state (dt << tau)
 rates = 1.0 / times  # Transition rates between states, r12 (-1 to 1) and r21 (1 to -1), where r12 = 1/tau12
 sim_dir = f"{a:.3g}"  # Master directory for all data
 
@@ -25,7 +25,7 @@ sim_dir = f"{a:.3g}"  # Master directory for all data
 run_switching = True
 run_brownian = True
 show_figs = False  # Display figures as they are plotted (not recommended for many repeats)
-plot_all = False  # Plot figures for every repeat (not recommended for many repeats)
+plot_all = True  # Plot figures for every repeat (not recommended for many repeats)
 
 # Computed params
 if run_brownian:
@@ -42,7 +42,7 @@ if run_switching and 1 not in init_state[:] and -1 not in init_state[:]:
     print(f"ERROR: Initial kinetic states are currently set to {init_state[0]:d} and {init_state[1]:d}. Only 1 and -1 are currently supported.")
     print("Exiting")
     quit()
-if not draw_gaussian:
+if not draw_gaussian and run_brownian:
     print(f"WARNING: Uniform RNG is currently broken. Make sure 'draw_gaussian' is set to True for correct Brownian behaviour.")
 
 def print_params():

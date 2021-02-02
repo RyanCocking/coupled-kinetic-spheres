@@ -38,7 +38,7 @@ def plot_pos(path, pos):
         plt.show()
     plt.close()
 
-def plot_disp(path, disp):
+def plot_disp(path, disp, d):
     # Displacement, X = x - x0
     plt.plot(Params.steps, disp[0, :], label="Oscillator 1")
     plt.plot(Params.steps, disp[1, :], label="Oscillator 2")
@@ -64,6 +64,39 @@ def plot_disp(path, disp):
     if Params.show_figs:
         plt.show()
     plt.close()
+    
+    # Displacement histogram for given state
+    if np.abs(d).any() != 1:
+        # This requires 1 or -1 integers to work, so ignore data averaged over repeats!
+        pass
+    else:
+        # Get a histogram for displacements of each state, combined from both oscillators
+        ind1 = np.where(d[:, :] == -1)  # state 1, d = -1
+        ind2 = np.where(d[:, :] == 1)  # state 2, d = 1
+        disp_state = np.array([disp[ind1], disp[ind2]])
+        
+        plt.hist(disp_state[0], bins='auto', density=True, label=f"$d_1 = -1$", edgecolor='Red', facecolor='None')
+        plt.hist(disp_state[1], bins='auto', density=True, label=f"$d_2 = 1$", edgecolor='Blue', facecolor='None')
+        
+        # # Below gives identical exps...
+        # U = 0.5 * Params.k * np.square(disp_state[0])
+        # e = np.exp(-U / (Params.kB * Params.T))
+        # plt.plot(disp_state[0], e, 'ro', ms=0.4, label="$U_1(x)$")
+        
+        # U = 0.5 * Params.k * np.square(disp_state[1])
+        # e = np.exp(-U / (Params.kB * Params.T))
+        # plt.plot(disp_state[1], e, 'bo', ms=0.4, label="$U_2(x)$")
+
+        plt.xlabel("Displacement")
+        plt.ylabel("Probability density")
+        plt.legend()
+        save_figure(path, "DispStatePDF.png")
+        if Params.show_figs:
+            plt.show()
+        plt.close()
+                
+    
+    
 
 def plot_disp2(path, disp):
     # Displacement squared, X^2 = (x - x0)^2
@@ -125,7 +158,7 @@ def plot_p(path, p, disp):
     plt.plot(disp[1, :], p[1, :], 'ro', label="Oscillator 2", ms=0.5)
     plt.xlabel("Displacement")
     plt.ylabel("Probability of state switch")
-    plt.ylim(0, 2)
+    plt.ylim(0, 1)
     plt.legend()
     save_figure(path, "ProbSwitch_Disp.png")
     if Params.show_figs:
@@ -271,10 +304,10 @@ def plot_dW2(path, dW):
 
 # ============ Plot multiple figures at once ============ #
 
-def plot_core(path, pos, disp, energy, acf_disp):
+def plot_core(path, pos, disp, d, energy, acf_disp):
     # Core figures, relevant for every simulation
     plot_pos(path, pos)
-    plot_disp(path, disp)
+    plot_disp(path, disp, d)
     # plot_disp2(path, disp)
     plot_energy(path, energy)
     plot_acf_disp(path, acf_disp)
@@ -322,7 +355,7 @@ def plot_all():
             acf_d = load_array(sub_dir, "autocorrstate.txt")
             
         # Plot figures
-        plot_core(sub_dir, pos, disp, energy, acf_disp)
+        plot_core(sub_dir, pos, disp, d, energy, acf_disp)
         if Params.run_brownian:
             plot_brownian(sub_dir, dW)
         if Params.run_switching:
