@@ -21,8 +21,8 @@ class Oscillator:
         self.state = state
         
         # Obtained from input
-        self.adjacent_states = self.get_adjacent_states(Params.all_states)
-        self.transition_rates = self.get_rates(Params.rate_AB, Params.rate_12)
+        self.adjacent_states = self.get_adjacent_states(["1A", "1B", "2A", "2B"])
+        self.transition_rates = self.get_rates(1.0, 1.0)
 
     def get_adjacent_states(self, all_states):
         """
@@ -114,34 +114,6 @@ class Oscillator:
         """
         Probability of transition between two states
         """
-        dU = 2 * Params.k * self.displacement
-        return rate * np.exp(dU * Params.inv_kBT)
-    
-    def state_information():
-        """
-        dictionary with lambda expressions of switch probability?
-        each state needs information on its potential, adjacent states, the
-        rates, energy differences and probabilities of transition
-        to neighbours, e.g.
-        
-        {state: '1A', probs: [r_1A2A*exp(dU), r_1A1B*exp(dU)], neighbours: ['2A, 1B']}
-        can calculate dU once you have adjacent states - just subtract potentials
-        
-        given a 1D list of states, assuming a linear chain, generate a neighbour list
-        for each state as [left neighbour, right neighbour], e.g.:
-        
-        list = [1A, 2A, 2B, 1B]  # State names
-        
-        for i in list[1:-1]
-            neighbours = [ [list[i-1], list[i+1]] ]
-        neighbours[0]  = [list[-1], list[1]]
-        neighbours[-1] = [list[0], list[-2]]
-        
-        hopefully resulting in:
-        
-        neighbours = [[1B, 2A], [1A, 2B], [2A, 1B], [2B, 1A]]
-        
-        """
         pass
     
     def update_all_states():
@@ -182,7 +154,7 @@ class Oscillator:
             pass
         
         def update():
-             """
+            """
             Having recently transitioned, update the relevant state data such as
             neighbours, potential, probabilities, etc...
             """

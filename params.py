@@ -27,11 +27,6 @@ run_brownian = True
 show_figs = False  # Display figures as they are plotted (not recommended for many repeats)
 plot_all = False  # Plot figures for every repeat (not recommended for many repeats)
 
-# TODO: Stuff for Oscillator class
-all_states = ["1A", "1B", "2A", "2B"]
-rate_AB = 1.0  # r_1AB = r_2AB
-rate_12 = 0.8  # r_12 = r_21
-
 # Computed params
 if run_brownian:
     draw_gaussian = True
